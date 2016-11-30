@@ -7,11 +7,11 @@ from static_analysis import StaticAnalyzer
 
 class TestStaticAnalysis(unittest.TestCase):
 
-    vuln_tm_hn_apk_path = "input_apks/acceptallcertificates-release-unsigned.apk"
-    vuln_tm_hn_decoded_path = "decoded_apks/acceptallcertificates-release-unsigned"
+    vuln_tm_hn_apk_path = "input_apks/acceptallcertificates-release.apk"
+    vuln_tm_hn_decoded_path = "decoded_apks/acceptallcertificates-release"
 
-    vuln_wv_apk_path = "input_apks/acceptallcertificateswebview-release-unsigned.apk"
-    vuln_wv_decoded_path = "decoded_apks/acceptallcertificateswebview-release-unsigned"
+    vuln_wv_apk_path = "input_apks/acceptallcertificateswebview-release.apk"
+    vuln_wv_decoded_path = "decoded_apks/acceptallcertificateswebview-release"
 
     @classmethod
     def setUpClass(cls):
