@@ -132,9 +132,6 @@ class StaticAnalyzer:
         on_received_ssl_error = False
         webviewclient_key = None
 
-        if not "android" in f_content:
-            print "not android"
-
         meth_arr = []
 
         for method in methods:
