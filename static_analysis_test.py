@@ -7,16 +7,16 @@ from static_analysis import StaticAnalyzer
 
 class TestStaticAnalysis(unittest.TestCase):
 
-    vuln_tm_hn_apk_path = "input_apks/acceptallcertificates-release.apk"
+    vuln_tm_hn_apk_name = "acceptallcertificates-release"
     vuln_tm_hn_decoded_path = "decoded_apks/acceptallcertificates-release"
 
-    vuln_wv_apk_path = "input_apks/acceptallcertificateswebview-release.apk"
+    vuln_wv_apk_name = "acceptallcertificateswebview-release"
     vuln_wv_decoded_path = "decoded_apks/acceptallcertificateswebview-release"
 
     @classmethod
     def setUpClass(cls):
-        disassemble_apk(cls.vuln_tm_hn_apk_path)
-        disassemble_apk(cls.vuln_wv_apk_path)
+        disassemble_apk(cls.vuln_tm_hn_apk_name)
+        disassemble_apk(cls.vuln_wv_apk_name)
 
     @classmethod
     def tearDownClass(cls):
@@ -24,7 +24,7 @@ class TestStaticAnalysis(unittest.TestCase):
         shutil.rmtree(cls.vuln_wv_decoded_path)
 
     def test_vuln_trustmanager(self):
-        results = StaticAnalyzer().analyze_statically(self.vuln_tm_hn_decoded_path)
+        results = StaticAnalyzer().analyze_statically(self.vuln_tm_hn_decoded_path).result_list
         result = results[1]
         self.assertEqual(self.vuln_tm_hn_decoded_path, result.apk_folder)
         self.assertEqual("Lcom/example/markus/acceptallcertificatestestapp/InsecureTrustManager;-><init>()V",
@@ -34,7 +34,7 @@ class TestStaticAnalysis(unittest.TestCase):
         self.assertEqual("trustmanager", result.vuln_type)
 
     def test_vuln_hostnameverifier(self):
-        results = StaticAnalyzer().analyze_statically(self.vuln_tm_hn_decoded_path)
+        results = StaticAnalyzer().analyze_statically(self.vuln_tm_hn_decoded_path).result_list
         result = results[0]
         self.assertEqual(self.vuln_tm_hn_decoded_path, result.apk_folder)
         self.assertEqual("Lcom/example/markus/acceptallcertificatestestapp/InsecureHostnameVerifier;-><init>()V",
@@ -44,7 +44,7 @@ class TestStaticAnalysis(unittest.TestCase):
         self.assertEqual("hostnameverifier", result.vuln_type)
 
     def test_vuln_webviewclient(self):
-        results = StaticAnalyzer().analyze_statically(self.vuln_wv_decoded_path)
+        results = StaticAnalyzer().analyze_statically(self.vuln_wv_decoded_path).result_list
         result = results[0]
         self.assertEqual(self.vuln_wv_decoded_path, result.apk_folder)
         self.assertEqual("Lcom/example/markus/acceptallcertificateswebviewtestapp/InsecureWebViewClient;-><init>()V",

@@ -7,6 +7,12 @@ from xml.etree import ElementTree
 sys.setrecursionlimit(40000)
 
 
+class StaticAnalysisResults:
+    def __init__(self, package, result_list):
+        self.package = package
+        self.result_list = result_list
+
+
 class StaticAnalysisResult:
     def __init__(self, apk_folder, vuln_entry, meth_nm, tag, vuln_type):
         self.apk_folder = apk_folder
@@ -194,14 +200,16 @@ class StaticAnalyzer:
                         attrib_value = "%s%s" % (package, attrib_value)
                     self.MANIFEST[attrib_value] = child.tag
 
+        return package
+
     # Analyses the decoded APK in the given path and returns a list of ???
     def analyze_statically(self, apk_path):
-        self.parse_manifest(apk_path)
+        package = self.parse_manifest(apk_path)
         self.process_apk(apk_path)
 
-        result = list()
+        results = list()
         for vuln in self.VULN:
             node = self.NODES[vuln[0]]
-            result += self.traverse(apk_path, vuln, node, set())
+            results += self.traverse(apk_path, vuln, node, set())
 
-        return result
+        return StaticAnalysisResults(package, results)

@@ -10,4 +10,4 @@ class TestStaticAnalysis(unittest.TestCase):
         shutil.rmtree("decoded_apks/acceptallcertificates-release")
 
     def test_disassemble_apk(self):
-        disassemble_apk("input_apks/acceptallcertificates-release.apk")
+        disassemble_apk("acceptallcertificates-release")
