@@ -261,7 +261,7 @@ class GetFieldType:
                             register = i.get_output().strip()
                             logger.debug("register " + str(register))
 
-                        elif i.get_name() == "iput-object":
+                        elif i.get_name() == "iput-object" and register in i.get_output().split(',')[0].strip():
                             logger.debug(str(i.get_name()) + ";- output " + str(i.get_output()) + ";- name " + str(method.get_name()))
                             # example: v2, v5, Lcom/example/markus/acceptallcertificatestestapp/MainActivity;->editText
                             # Landroid/widget/EditText;
