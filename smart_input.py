@@ -156,7 +156,6 @@ class GetFieldType:
                         elif "move" in instruction.get_name():
                             hex_codes.append(self.parse_move(method.get_code().get_bc(), idx - 1))
 
-        logger.debug("hex codes " + str(hex_codes))
         if not hex_codes:
             return False
 
@@ -164,7 +163,6 @@ class GetFieldType:
         for layout in self.rlayouts:
             for field in layout.get_fields():
                 if hex(field.get_init_value().get_value()) in hex_codes:
-                    logger.debug("xml name " + field.get_name())
                     return 'res/layout/%s.xml' % field.get_name()
                     # TODO: do we also have to consider other layout versions, e.g. layout-v17 and layout-v21
 
@@ -183,8 +181,8 @@ class GetFieldType:
 
     def infer_implicit_input_types(self, text_fields):
         for text_field in text_fields:
+            type_changed = False
             for path in text_field.tainted_field.get_paths():
-                logger.debug("path " + str(path))
                 access, field_id = path[0]
 
                 # get the method id
@@ -202,7 +200,6 @@ class GetFieldType:
                         if field_id == idx:
                             # get the register for the iget-object
                             reg_to_follow = i.get_output().split(',')[0].strip()
-                            logger.debug("reg_to_follow " + str(reg_to_follow))
 
                             # go down the iter till we reach an invoke-static with the same register
                             while True:
@@ -210,13 +207,28 @@ class GetFieldType:
                                     i = next(bc_iter)
                                     if i.get_name() == "invoke-static" and reg_to_follow in i.get_output() \
                                             and "parse" in i.get_output():
-                                        text_field.type = get_type(i)
-                                        logger.debug("text field changed to " + str(get_type()))
+                                        new_type = get_type(i)
+                                        if text_field.type != new_type:
+                                            if type_changed:
+                                                logger.warn(
+                                                    "Inferred conflicting xml and implicit type for field %s: %s and %s"
+                                                    % text_field.name, text_field.type, new_type)
+                                            else:
+                                                logger.warn(
+                                                    "Inferred conflicting implicit types for field %s: %s and %s"
+                                                    % text_field.name, text_field.type, new_type)
+                                        text_field.type = new_type
+                                        type_changed = True
                                         break
                                 except StopIteration:
+                                    logger.warn("Could not infer implicit type for field %s: No parse invocation"
+                                                % text_field.name)
                                     break
 
                         idx += i.get_length()
+
+            if not type_changed:
+                logger.warn("Could not infer implicit type for field %s" % text_field.name)
 
     # Return a dict of the class names and the classes
     def get_class_dict(self):
@@ -229,24 +241,20 @@ class GetFieldType:
         return classes
 
     def get_input_field_from_code(self, class_object, field, class_fields):
-        logger.debug("analyzing field %s" % field) #
+        logger.debug("analyzing field %s" % field)
         for method in class_object.get_methods():
-            logger.debug("method " + str(method))
             inst_iter = iter(method.get_instructions())
             for i in inst_iter:
-                logger.debug("i " + str(i))
-                if "const" == i.get_name() or "const/high16" == i.get_name():
-                    logger.debug("field " + str(field) + ", parse_const " + str(parse_const(i)))
                 if ("const" == i.get_name() or "const/high16" == i.get_name()) and field == parse_const(i):
                     # get the register in which the constant is assigned
                     register = i.get_output().split(',')[0].strip()
-                    logger.debug("const register " + str(register))
 
                     while True:
                         try:
                             last_i = i
                             i = next(inst_iter)
                         except StopIteration:
+                            logger.warn("Could not get input field %s from code" % field)
                             return
 
                         # follow the register to the next invoke-virtual of findViewById
@@ -254,15 +262,11 @@ class GetFieldType:
                                 and "invoke-virtual" in i.get_name():
                             # and get the register of that output
                             register = i.get_output().split(',')[1].strip()
-                            logger.debug("register " + str(register))
 
                         elif i.get_name() == "move-result-object" and "invoke-virtual" in last_i.get_name():
-                            logger.debug(str(i.get_name()) + ";- output " + str(i.get_output()) + ";- name " + str(method.get_name()))
                             register = i.get_output().strip()
-                            logger.debug("register " + str(register))
 
                         elif i.get_name() == "iput-object" and register in i.get_output().split(',')[0].strip():
-                            logger.debug(str(i.get_name()) + ";- output " + str(i.get_output()) + ";- name " + str(method.get_name()))
                             # example: v2, v5, Lcom/example/markus/acceptallcertificatestestapp/MainActivity;->editText
                             # Landroid/widget/EditText;
                             out_sp = re.search(r".*, (.*)->(\b[\w]*\b) (.*)", i.get_output()).groups()
@@ -414,6 +418,8 @@ class TextField:
 
 def generate_smart_input(apk_name):
     smart_input_results = GetFieldType(apk_name).analyze()
+    for r in smart_input_results:
+        logger.debug("result: " + str(r))
     return smart_input_results
 
 if __name__ == '__main__':
