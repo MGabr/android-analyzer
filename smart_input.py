@@ -244,6 +244,7 @@ class GetFieldType:
 
                     while True:
                         try:
+                            last_i = i
                             i = next(inst_iter)
                         except StopIteration:
                             return
@@ -255,12 +256,12 @@ class GetFieldType:
                             register = i.get_output().split(',')[1].strip()
                             logger.debug("register " + str(register))
 
-                        if i.get_name() == "move-result-object" and register in i.get_output():
+                        elif i.get_name() == "move-result-object" and "invoke-virtual" in last_i.get_name():
                             logger.debug(str(i.get_name()) + ";- output " + str(i.get_output()) + ";- name " + str(method.get_name()))
                             register = i.get_output().strip()
                             logger.debug("register " + str(register))
 
-                        if i.get_name() == "iput-object":
+                        elif i.get_name() == "iput-object":
                             logger.debug(str(i.get_name()) + ";- output " + str(i.get_output()) + ";- name " + str(method.get_name()))
                             # example: v2, v5, Lcom/example/markus/acceptallcertificatestestapp/MainActivity;->editText
                             # Landroid/widget/EditText;
