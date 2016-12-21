@@ -7,7 +7,7 @@ import re
 import logging
 
 
-logging.basicConfig(level=logging.DEBUG, filename="log.txt")
+# logging.basicConfig(level=logging.DEBUG, filename="log.txt")
 logger = logging.getLogger(__name__)
 
 

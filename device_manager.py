@@ -13,7 +13,8 @@ def get_emulator():
     # TODO: maybe use -http-proxy argument, maybe also -gpu on
     emulator_type = "Nexus_5_API_24"
     port = "5554"
-    cmd = "~/Android/Sdk/tools/emulator -avd " + emulator_type + " -port " + port + " -wipe-data &"
+    cmd = "~/Android/Sdk/tools/emulator -avd " + emulator_type + " -port " + port + \
+          " -wipe-data -use-system-libs -http-proxy http://localhost:8080 &"
     subprocess.check_call(cmd, shell=True)
     emulator_id = "emulator-" + port
     wait_until_boot_completed(emulator_id)
