@@ -2,6 +2,7 @@ from apk_disassembly import disassemble_apk
 from static_analysis import StaticAnalyzer
 from dynamic_analysis import analyze_dynamically
 from smart_input import generate_smart_input
+from log_analysis import analyse_log
 import logging
 
 
@@ -11,6 +12,7 @@ def analyse(apk_name):
     static_analysis_results = StaticAnalyzer().analyze_statically(disassembled_path)
     smart_input_results = None  # generate_smart_input(apk_name)
     analyze_dynamically(apk_name, static_analysis_results, smart_input_results)
+    result = analyse_log()
 
 
 if __name__ == "__main__":

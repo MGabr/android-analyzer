@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 def start_mitm_proxy():
     cmd = "mitmproxy -w mitmproxy -q --port 8080"
+    logger.debug(cmd)
     process = subprocess.Popen(cmd, shell=True)
-    logger.debug("mitm_proxy started")
     return process
 
 
