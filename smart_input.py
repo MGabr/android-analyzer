@@ -7,7 +7,7 @@ import re
 import logging
 
 
-# logging.basicConfig(level=logging.DEBUG, filename="log.txt")
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -345,64 +345,64 @@ class TextField:
         else:
             return int(self.id)
 
+    type_mask_class= 0x0000000f
     #TODO add more types
     type_class_lookup = {
-        u'0x00000000': 'TYPE_NULL',
-        u'0x00000001': 'TYPE_CLASS_TEXT',
-        u'0x00000002': 'TYPE_CLASS_NUMBER',
-        u'0x00000003': 'TYPE_CLASS_PHONE',
-        u'0x00000004': 'TYPE_CLASS_DATETIME',
-        u'0x00000081': 'textPassword',
-        u'0x00000021': 'textEmailAddress',
+        0x00000000: 'TYPE_NULL',
+        0x00000001: 'TYPE_CLASS_TEXT',
+        0x00000002: 'TYPE_CLASS_NUMBER',
+        0x00000003: 'TYPE_CLASS_PHONE',
+        0x00000004: 'TYPE_CLASS_DATETIME'
     }
 
     def get_type_class(self):
-        if self.type in self.type_class_lookup:
-            return self.type_class_lookup[self.type]
+        type_class = int(self.type, 16) & self.type_mask_class
+        if type_class in self.type_class_lookup:
+            return self.type_class_lookup[type_class]
         else:
             return "TYPE_CLASS_NOT_RECOGNIZED"
 
+    type_mask_variation = 0x00000ff0
     type_variation_lookup = {
         'TYPE_NULL': {
 
         },
         'TYPE_CLASS_TEXT': {
-            '0x0': 'TYPE_TEXT_VARIATION_NORMAL',
-            '0x1': 'TYPE_TEXT_VARIATION_URI',
-            '0x2': 'TYPE_TEXT_VARIATION_EMAIL_ADDRESS',
-            '0x3': 'TYPE_TEXT_VARIATION_EMAIL_SUBJECT',
-            '0x4': 'TYPE_TEXT_VARIATION_SHORT_MESSAGE',
-            '0x5': 'TYPE_TEXT_VARIATION_LONG_MESSAGE',
-            '0x6': 'TYPE_TEXT_VARIATION_PERSON_NAME',
-            '0x7': 'TYPE_TEXT_VARIATION_POSTAL_ADDRESS',
-            '0x8': 'TYPE_TEXT_VARIATION_PASSWORD',
-            '0x9': 'TYPE_TEXT_VARIATION_VISIBLE_PASSWORD',
-            '0xa': 'TYPE_TEXT_VARIATION_WEB_EDIT_TEXT',
-            '0xb': 'TYPE_TEXT_VARIATION_FILTER',
-            '0xc': 'TYPE_TEXT_VARIATION_PHONETIC',
-            '0xd': 'TYPE_TEXT_VARIATION_WEB_EMAIL_ADDRESS',
-            '0xe': 'TYPE_TEXT_VARIATION_WEB_PASSWORD'
+            0x00: 'TYPE_TEXT_VARIATION_NORMAL',
+            0x10: 'TYPE_TEXT_VARIATION_URI',
+            0x20: 'TYPE_TEXT_VARIATION_EMAIL_ADDRESS',
+            0x30: 'TYPE_TEXT_VARIATION_EMAIL_SUBJECT',
+            0x40: 'TYPE_TEXT_VARIATION_SHORT_MESSAGE',
+            0x50: 'TYPE_TEXT_VARIATION_LONG_MESSAGE',
+            0x60: 'TYPE_TEXT_VARIATION_PERSON_NAME',
+            0x70: 'TYPE_TEXT_VARIATION_POSTAL_ADDRESS',
+            0x80: 'TYPE_TEXT_VARIATION_PASSWORD',
+            0x90: 'TYPE_TEXT_VARIATION_VISIBLE_PASSWORD',
+            0xa0: 'TYPE_TEXT_VARIATION_WEB_EDIT_TEXT',
+            0xb0: 'TYPE_TEXT_VARIATION_FILTER',
+            0xc0: 'TYPE_TEXT_VARIATION_PHONETIC',
+            0xd0: 'TYPE_TEXT_VARIATION_WEB_EMAIL_ADDRESS',
+            0xe0: 'TYPE_TEXT_VARIATION_WEB_PASSWORD'
         },
         'TYPE_CLASS_NUMBER': {
-            '0x0': 'TYPE_NUMBER_VARIATION_NORMAL',
-            '0x1': 'TYPE_NUMBER_VARIATION_PASSWORD'
+            0x00: 'TYPE_NUMBER_VARIATION_NORMAL',
+            0x10: 'TYPE_NUMBER_VARIATION_PASSWORD'
         },
         'TYPE_CLASS_PHONE': {
 
         },
         'TYPE_CLASS_DATETIME': {
-            '0x0': 'TYPE_DATETIME_VARIATION_NORMAL',
-            '0x1': 'TYPE_DATETIME_VARIATION_DATE',
-            '0x2': 'TYPE_DATETIME_VARIATION_TIME'
+            0x00: 'TYPE_DATETIME_VARIATION_NORMAL',
+            0x10: 'TYPE_DATETIME_VARIATION_DATE',
+            0x20: 'TYPE_DATETIME_VARIATION_TIME'
         }
     }
 
     def get_type_variation(self, type_class):
-        try:
-            type_int = int(self.type, 16)
-            type_hex = hex((type_int / 16) % 256)
-            return self.type_variation_lookup[type_class][type_hex]
-        except Exception:
+        type_variation = int(self.type, 16) & self.type_mask_variation
+        if type_class in self.type_variation_lookup and type_variation in self.type_variation_lookup[type_class]:
+            return self.type_variation_lookup[type_class][type_variation]
+        else:
             return ''
 
     def get_type_flags(self, type_class):
@@ -416,11 +416,14 @@ class TextField:
             self.name, self.id, type_class, type_var, type_flags)
 
 
+# Returns a dict of activity names and a list of their text fields
 def generate_smart_input(apk_name):
     smart_input_results = GetFieldType(apk_name).analyze()
-    for r in smart_input_results:
-        logger.debug("result: " + str(r))
     return smart_input_results
 
-if __name__ == '__main__':
-    generate_smart_input("acceptallcertificates-release")
+if __name__ == "__main__":
+    results = generate_smart_input("acceptallcertificates-release")
+    print "results: " + str(results)
+    for key in results:
+        for textfield in results[key]:
+            print "key: " + key + ", textfield: " + str(textfield)
