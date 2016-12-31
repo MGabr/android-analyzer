@@ -63,12 +63,15 @@ def analyze_dynamically(apk_name, static_analysis_results, smart_input_results):
                 editText.touch()
                 editText.setText(smart_input)
                 logger.debug("edit text: %s" % editText.getText())
+                if vc.isKeyboardShown():
+                    press_back(emulator_id)
 
             for clickableView in clickableViews:
-                logger.debug("Clickable View %s" % str(clickableView))
                 oldWindow = device.getFocusedWindowName()
                 clickableView.touch()
-                time.sleep(5)
+                time.sleep(2)
+                if vc.isKeyboardShown():
+                    press_back(emulator_id)
                 newWindow = device.getFocusedWindowName()
                 if newWindow != oldWindow:
                     logger.debug("Focused window changed while clicking view. Pressing back button.")
