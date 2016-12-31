@@ -2,9 +2,11 @@ import device_manager
 import subprocess
 import time
 import logging
+import re
 from com.dtmilano.android.viewclient import ViewClient
 from mitm_proxy import start_mitm_proxy, kill_mitm_proxy
 from network_monitor import start_network_monitor, kill_network_monitor
+from smart_input_assignments import SmartInputAssignment
 
 
 logger = logging.getLogger(__name__)
@@ -22,10 +24,14 @@ def analyze_dynamically(apk_name, static_analysis_results, smart_input_results):
     time.sleep(1)
     network_monitor_process = start_network_monitor(emulator_id, static_analysis_results.package)
 
+    smart_input_assignment = SmartInputAssignment()
+
     for result in static_analysis_results.result_list:
         # reset the window, press enter two times
         press_enter(emulator_id)
         press_enter(emulator_id)
+
+        smart_input_for_activity = smart_input_results[result.meth_nm]
 
         # TODO: also support services?
         if result.tag == "activity":
@@ -49,11 +55,13 @@ def analyze_dynamically(apk_name, static_analysis_results, smart_input_results):
 
             # fill all EditText with smart input
             for editText in editTexts:
-                logger.debug("EditText %s" % str(editText))
-                # TODO: fill in smart input
-                logger.debug("edit text: %s" % editText.getText())
+                smart_input = get_smart_input_for_edittext(
+                    editText.getId(),
+                    smart_input_for_activity,
+                    smart_input_assignment)
+                logger.debug("smart_input: " + str(smart_input))
                 editText.touch()
-                editText.setText("https://www.google.at")
+                editText.setText(smart_input)
                 logger.debug("edit text: %s" % editText.getText())
 
             for clickableView in clickableViews:
@@ -119,3 +127,19 @@ def press_back(emulator_id):
     cmd = "adb -s " + emulator_id + " shell input keyevent 4"
     logger.debug(cmd)
     subprocess.check_call(cmd, shell=True)
+
+
+def get_smart_input_for_edittext(edittext_id, smart_input_for_activity, smart_input_ass):
+    edittext_name = re.match(".*(editText[0-9]*)$", edittext_id).group(1)
+
+    for text_field in smart_input_for_activity:
+        if text_field.name == edittext_name:
+            type_class = text_field.get_type_class()
+            if type_class:
+                type_variation = text_field.get_type_variation(type_class)
+                if type_variation:
+                    return smart_input_ass.type_variation_ass[type_variation]
+                else:
+                    return smart_input_ass.type_class_ass[text_field.get_type_class()]
+    return None  # TODO: what to do here?
+

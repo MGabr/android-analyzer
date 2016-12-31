@@ -10,10 +10,10 @@ def analyse(apk_name):
     logging.basicConfig(level=logging.DEBUG)
     disassembled_path = disassemble_apk(apk_name)
     static_analysis_results = StaticAnalyzer().analyze_statically(disassembled_path)
-    smart_input_results = None  # generate_smart_input(apk_name)
+    smart_input_results = generate_smart_input(apk_name)
     analyze_dynamically(apk_name, static_analysis_results, smart_input_results)
     result = analyse_log()
 
 
 if __name__ == "__main__":
-    analyse("acceptallcertificates-release")
+    analyse("smartinput-release")

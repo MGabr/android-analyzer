@@ -182,53 +182,54 @@ class GetFieldType:
     def infer_implicit_input_types(self, text_fields):
         for text_field in text_fields:
             type_changed = False
-            for path in text_field.tainted_field.get_paths():
-                access, field_id = path[0]
+            if text_field.tainted_field:
+                for path in text_field.tainted_field.get_paths():
+                    access, field_id = path[0]
 
-                # get the method id
-                m_idx = path[1]
+                    # get the method id
+                    m_idx = path[1]
 
-                if access == "R":
-                    # get the method object from the vm
-                    method = self.d.get_method_by_idx(m_idx)
-                    code = method.get_code()
-                    bc = code.get_bc()
+                    if access == "R":
+                        # get the method object from the vm
+                        method = self.d.get_method_by_idx(m_idx)
+                        code = method.get_code()
+                        bc = code.get_bc()
 
-                    idx = 0
-                    bc_iter = iter(bc.get_instructions())
-                    for i in bc_iter:
-                        if field_id == idx:
-                            # get the register for the iget-object
-                            reg_to_follow = i.get_output().split(',')[0].strip()
+                        idx = 0
+                        bc_iter = iter(bc.get_instructions())
+                        for i in bc_iter:
+                            if field_id == idx:
+                                # get the register for the iget-object
+                                reg_to_follow = i.get_output().split(',')[0].strip()
 
-                            # go down the iter till we reach an invoke-static with the same register
-                            while True:
-                                try:
-                                    i = next(bc_iter)
-                                    if i.get_name() == "invoke-static" and reg_to_follow in i.get_output() \
-                                            and "parse" in i.get_output():
-                                        new_type = get_type(i)
-                                        if text_field.type != new_type:
-                                            if type_changed:
-                                                logger.warn(
-                                                    "Inferred conflicting xml and implicit type for field %s: %s and %s"
-                                                    % text_field.name, text_field.type, new_type)
-                                            else:
-                                                logger.warn(
-                                                    "Inferred conflicting implicit types for field %s: %s and %s"
-                                                    % text_field.name, text_field.type, new_type)
-                                        text_field.type = new_type
-                                        type_changed = True
+                                # go down the iter till we reach an invoke-static with the same register
+                                while True:
+                                    try:
+                                        i = next(bc_iter)
+                                        if i.get_name() == "invoke-static" and reg_to_follow in i.get_output() \
+                                                and "parse" in i.get_output():
+                                            new_type = get_type(i)
+                                            if text_field.type != new_type:
+                                                if type_changed:
+                                                    logger.warn(
+                                                        "Inferred conflicting xml and implicit type for field %s: %s and %s"
+                                                        % text_field.name, text_field.type, new_type)
+                                                else:
+                                                    logger.warn(
+                                                        "Inferred conflicting implicit types for field %s: %s and %s"
+                                                        % text_field.name, text_field.type, new_type)
+                                            text_field.type = new_type
+                                            type_changed = True
+                                            break
+                                    except StopIteration:
+                                        logger.warn("Could not infer implicit type for field %s: No parse invocation"
+                                                    % text_field.name)
                                         break
-                                except StopIteration:
-                                    logger.warn("Could not infer implicit type for field %s: No parse invocation"
-                                                % text_field.name)
-                                    break
 
-                        idx += i.get_length()
+                            idx += i.get_length()
 
-            if not type_changed:
-                logger.warn("Could not infer implicit type for field %s" % text_field.name)
+                if not type_changed:
+                    logger.warn("Could not infer implicit type for field %s" % text_field.name)
 
     # Return a dict of the class names and the classes
     def get_class_dict(self):
