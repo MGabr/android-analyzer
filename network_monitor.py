@@ -1,13 +1,14 @@
 import subprocess
 import logging
+import shlex
 
 
 logger = logging.getLogger(__name__)
 
 
-def start_network_monitor(emulator_id, package_name):
+def start_network_monitor(emulator_id, package_name, log_id):
     pid = get_pid(emulator_id, package_name)
-    process = trace_pid(emulator_id, pid)
+    process = trace_pid(emulator_id, pid, log_id)
     return process
 
 
@@ -19,11 +20,11 @@ def get_pid(emulator_id, package_name):
     return pid
 
 
-def trace_pid(emulator_id, pid):
+def trace_pid(emulator_id, pid, log_id):
     shell_cmd = "adb -s " + emulator_id + " shell su"
     logger.debug(shell_cmd)
-    network_monitor_process = subprocess.Popen(shell_cmd, shell=True,
-                                               stderr=open("network_%s" % emulator_id, "w"),
+    network_monitor_process = subprocess.Popen(shlex.split(shell_cmd),
+                                               stderr=open("network_monitor_log" + str(log_id), "w"),
                                                stdin=subprocess.PIPE)
 
     strace_cmd = "strace -p " + pid + " -q -f -e trace=network\n"

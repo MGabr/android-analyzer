@@ -1,14 +1,14 @@
 import re
 
 
-class LogAnalysisResult:
-    def __init__(self, connected_ips):
-        self.connected_ips = connected_ips
+def analyse_logs(dynamic_analysis_results):
+    for dynamic_analysis_result in dynamic_analysis_results:
+        analyse_log(dynamic_analysis_result)
 
 
-def analyse_log():
-    mitm_proxy = open("mitmproxy", "r")
-    network = open("network_emulator-5554", "r")
+def analyse_log(dynamic_analysis_result):
+    mitm_proxy = open(dynamic_analysis_result.get_mitm_proxy_log(), "r")
+    network = open(dynamic_analysis_result.get_network_monitor_log(), "r")
 
     ssl_regex = r"ssl_established,4:true"
     between_ssl_ip_regex = r"(?!ssl_established).*address,[0-9]{1,2}:[0-9]{1,2}:address,[0-9]{1,2}:[0-9]{1,2}:"
@@ -30,9 +30,10 @@ def analyse_log():
             if re.match(ip_regex, line):
                 connected_ips |= {ip}
 
-    print "connected_ips: " + str(connected_ips)
-    return LogAnalysisResult(connected_ips)
+    print_error_messages(dynamic_analysis_result, connected_ips)
 
 
-if __name__ == "__main__":
-    analyse_log()
+def print_error_messages(dynamic_analysis_result, connected_ips):
+    sc = dynamic_analysis_result.scenario
+    print sc.scenario_settings.error_message
+    print "connected ips : " + str(connected_ips)

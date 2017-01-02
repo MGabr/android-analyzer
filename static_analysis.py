@@ -17,7 +17,7 @@ class StaticAnalysisResult:
     def __init__(self, apk_folder, vuln_entry, meth_nm, tag, vuln_type):
         self.apk_folder = apk_folder
         self.vuln_entry = vuln_entry
-        self.meth_nm = meth_nm # this is not method but activity (class) name??
+        self.meth_nm = meth_nm  # this is not method but activity (class) name??
         self.tag = tag
         self.vuln_type = vuln_type
 
