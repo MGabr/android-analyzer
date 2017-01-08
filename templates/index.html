@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Android HTTPS vulnerability checker</title>
+</head>
+<body>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for message in messages %}
+                    <li>{{ messages }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+    <form method="post" enctype="multipart/form-data" action="{{ url_for('upload_apk') }}">
+        <input type="file" name="apk">
+        <input type="submit" value="Upload APK to test" name="submit">
+    </form>
+    {% if log_analysis_results %}
+        <p>Your application is vulnerable!</p>
+        <ul>
+            {% for log_analysis_result in log_analysis_results %}
+                <li>
+                    {{ log_analysis_result.dynamic_analysis_result.scenario.scenario_settings.error_message }}
+                    Connected Ips: {{ log_analysis_result.connected_ips }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</body>
+</html>

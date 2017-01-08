@@ -12,7 +12,7 @@ def analyse(apk_name):
     static_analysis_results = StaticAnalyzer().analyze_statically(disassembled_path)
     smart_input_results = generate_smart_input(apk_name)
     dynamic_analysis_results = analyze_dynamically(apk_name, static_analysis_results, smart_input_results)
-    analyse_logs(dynamic_analysis_results)
+    return analyse_logs(dynamic_analysis_results)
 
 
 if __name__ == "__main__":

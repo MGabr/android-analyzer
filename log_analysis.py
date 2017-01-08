@@ -1,9 +1,19 @@
 import re
 
 
+class LogAnalysisResult:
+    def __init__(self, dynamic_analysis_result, connected_ips):
+        self.dynamic_analysis_result = dynamic_analysis_result
+        self.connected_ips = connected_ips
+
+
 def analyse_logs(dynamic_analysis_results):
+    log_analysis_results = []
     for dynamic_analysis_result in dynamic_analysis_results:
-        analyse_log(dynamic_analysis_result)
+        log_analysis_result = analyse_log(dynamic_analysis_result)
+        if log_analysis_result.connected_ips:
+            log_analysis_results += [log_analysis_result]
+    return log_analysis_results
 
 
 def analyse_log(dynamic_analysis_result):
@@ -30,7 +40,7 @@ def analyse_log(dynamic_analysis_result):
             if re.match(ip_regex, line):
                 connected_ips |= {ip}
 
-    print_error_messages(dynamic_analysis_result, connected_ips)
+    return LogAnalysisResult(dynamic_analysis_result, connected_ips)
 
 
 def print_error_messages(dynamic_analysis_result, connected_ips):
