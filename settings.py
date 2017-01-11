@@ -1,4 +1,5 @@
 from static_analysis import StaticAnalysisResults
+import itertools
 
 
 class Settings:
@@ -25,14 +26,30 @@ class Settings:
 
 
 class ScenarioSettings:
-    def __init__(self, vuln_types, certificate, error_message):
+    _ID = itertools.count()
+
+    def __init__(self, vuln_types, certificate, error_message, is_default=True, enabled=True):
+        self.id = self._ID.next()
+        self.is_default = is_default
+        self.enabled = enabled
         self.vuln_types = vuln_types
         self.certificate = certificate
         self.error_message = error_message
 
+    def get_vuln_types_str(self):
+        if len(self.vuln_types) > 2:
+            return 'Vulnerable ' + ', '.join(self.vuln_types[-1]) + ' and ' + self.vuln_types[-1]
+        else:
+            return 'Vulnerable ' + ' and '.join(self.vuln_types)
+
 
 class Certificate:
-    def __init__(self, description, custom_cert=None, custom_cert_domain=None, custom_ca=None):
+    _ID = itertools.count()
+
+    def __init__(self, name, description, custom_cert=None, custom_cert_domain=None, custom_ca=None, is_default=True):
+        self.id = self._ID.next()
+        self.name = name
+        self.is_default = is_default
         self.description = description
         self.custom_cert = custom_cert
         self.custom_cert_domain = custom_cert_domain

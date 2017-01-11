@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Scenario - SSL Security Analyzer for Android applications</title>
+</head>
+<body>
+
+    <h1>{{ sc.get_vuln_types_str() }} - {{ sc.certificate.name }}</h1>
+
+    <p>Is default scenario: {{ sc.is_default }}</p>
+    <p>Is enabled: {{ sc.enabled }}</p>
+    <p>Vulnerability types:</p>
+    <ul>
+        {% for vuln_type in sc.vuln_types %}
+            <li>{{ vuln_type }}</li>
+        {% endfor %}
+    </ul>
+    <p>Certificate:</p>
+    {% with c = sc.certificate %}
+        <p>{{ c.name }}</p>
+        <p>Is default certificate setting: {{ c.is_default }}</p>
+        <p>{{ c.description }}</p>
+        <p>Custom certificate:</p>
+        {% if c.custom_cert %}
+            <p>{{ c.custom_cert }}</p>
+        {% else %}
+            <p>None</p>
+        {% endif %}
+        <p>Custom certificate domain:</p>
+        {% if c.custom_cert_domain %}
+            <p>{{ c.custom_cert_domain }}</p>
+        {% else %}
+            <p>None</p>
+        {% endif %}
+        <p>Custom certificate authority:</p>
+        {% if c.custom_ca %}
+        <p>{{ c.custom_ca }}</p>
+        {% else %}
+        <p>None</p>
+        {% endif %}
+    {% endwith %}
+    <p>Error message:</p>
+    <p>{{ sc.error_message }}</p>
+
+</body>
+</html>

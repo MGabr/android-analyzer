@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Settings - SSL Security Analyzer for Android applications</title>
+</head>
+<body>
+
+    <h1>Scenarios</h1>
+    <ul>
+        {% for sc in scenarios %}
+            <li>
+                <a href="{{ url_for('show_scenario', id=sc.id) }}">
+                    {{ sc.get_vuln_types_str() }} - {{ sc.certificate.name }}
+                </a>:
+                {% if sc.is_default %} default scenario {% else %} custom scenario {% endif %}-
+                {% if sc.enabled %} enabled {% else %} disabled {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+
+    <h1>Certificate Settings</h1>
+    <ul>
+        {% for c in certificates %}
+            <li>
+                <a href="{{ url_for('show_certificate', id=c.id) }}">{{ c.name }}</a>:
+                {% if c.is_default %} default certificate settings {% else %} custom certificate settings {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Certificate - SSL Security Analyzer for Android applications</title>
+</head>
+<body>
+
+    <p>{{ c.name }}</p>
+    <p>Is default certificate setting: {{ c.is_default }}</p>
+    <p>{{ c.description }}</p>
+    <p>Custom certificate:</p>
+    {% if c.custom_cert %}
+        <p>{{ c.custom_cert }}</p>
+    {% else %}
+        <p>None</p>
+    {% endif %}
+    <p>Custom certificate domain:</p>
+    {% if c.custom_cert_domain %}
+        <p>{{ c.custom_cert_domain }}</p>
+    {% else %}
+        <p>None</p>
+    {% endif %}
+    <p>Custom certificate authority:</p>
+    {% if c.custom_ca %}
+    <p>{{ c.custom_ca }}</p>
+    {% else %}
+    <p>None</p>
+    {% endif %}
+
+</body>
+</html>
