@@ -1,4 +1,4 @@
-from static_analysis import StaticAnalysisResults
+from analysis.static.static_analysis import StaticAnalysisResults
 import itertools
 
 

@@ -2,9 +2,10 @@ from flask import Flask, request, flash, redirect, url_for, render_template, ses
 from flask_uploads import UploadSet, configure_uploads
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
-from analysis import analyse
-from default_settings import default_scenarios, default_certificates
+from analysis.analysis import analyse
+from models.default_settings import default_scenarios, default_certificates
 import socket
+import os
 
 
 # patch http://stackoverflow.com/a/25536820
@@ -21,8 +22,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
 SQLAlchemy(app)
 
 app.secret_key = 'lilian'
-SESSION_TYPE = ''
-Session(app)
+#SESSION_TYPE = 'sqlalchemy'
+#Session(app)
 
 app.config['UPLOADED_APKS_DEST'] = 'input_apks'
 apks = UploadSet('apks', ('apk',))
@@ -88,6 +89,7 @@ def upload_apk():
         filename = apks.save(request.files['apk'])
         filename = filename.replace('.apk', '')
         log_analysis_results = analyse(filename)
+        os.remove(os.path.join(app.config['UPLOADED_APKS_DEST'], filename + ".apk"))
         flash("APK uploaded.")
     else:
         flash("APK upload failed.")
@@ -96,4 +98,4 @@ def upload_apk():
 
 if __name__ == '__main__':
     # flask default port is 5000, but adb also runs on 5000
-    app.run(host='127.0.0.1', port=4000)
+    app.run(host='127.0.0.1', port=4001)

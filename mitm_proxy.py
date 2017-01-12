@@ -1,3 +1,5 @@
+# in top level directory, because of path problems with subprocess calls
+
 import subprocess
 import logging
 import shlex
@@ -7,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def start_mitm_proxy(certificate, log_id):
-    cmd = "mitmproxy -w mitm_proxy_log" + str(log_id) + " -q --port 8080"
+    cmd = "mitmproxy -w logs/mitm_proxy_log" + str(log_id) + " -q --port 8080"
     if certificate.custom_ca:
         cmd += " --cadir "
     if certificate.custom_cert:

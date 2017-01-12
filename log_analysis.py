@@ -1,4 +1,7 @@
+# in top level directory, because of path problems with subprocess calls
+
 import re
+import os
 
 
 class LogAnalysisResult:
@@ -39,6 +42,11 @@ def analyse_log(dynamic_analysis_result):
             ip_regex = r".*" + ip + r".*" # TODO: escape dots
             if re.match(ip_regex, line):
                 connected_ips |= {ip}
+
+    mitm_proxy.close()
+    os.remove(mitm_proxy.name)
+    network.close()
+    os.remove(network.name)
 
     return LogAnalysisResult(dynamic_analysis_result, connected_ips)
 

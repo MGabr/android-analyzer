@@ -1,3 +1,5 @@
+# in top level directory, because of path problems with subprocess calls
+
 import subprocess
 import logging
 import shlex
@@ -24,7 +26,7 @@ def trace_pid(emulator_id, pid, log_id):
     shell_cmd = "adb -s " + emulator_id + " shell su"
     logger.debug(shell_cmd)
     network_monitor_process = subprocess.Popen(shlex.split(shell_cmd),
-                                               stderr=open("network_monitor_log" + str(log_id), "w"),
+                                               stderr=open("logs/network_monitor_log" + str(log_id), "w"),
                                                stdin=subprocess.PIPE)
 
     strace_cmd = "strace -p " + pid + " -q -f -e trace=network\n"

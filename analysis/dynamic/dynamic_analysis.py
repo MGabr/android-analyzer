@@ -1,4 +1,4 @@
-import device_manager
+from analysis.environment import device_manager
 import subprocess
 import time
 import logging
@@ -6,8 +6,8 @@ import re
 from com.dtmilano.android.viewclient import ViewClient
 from mitm_proxy import start_mitm_proxy, kill_mitm_proxy
 from network_monitor import start_network_monitor, kill_network_monitor
-from smart_input_assignments import SmartInputAssignment
-from default_settings import default_settings
+from models.smart_input_assignments import SmartInputAssignment
+from models.default_settings import default_settings
 
 
 logger = logging.getLogger(__name__)
@@ -19,10 +19,10 @@ class DynamicAnalysisResult:
         self.log_id = log_id
 
     def get_mitm_proxy_log(self):
-        return "mitm_proxy_log" + str(self.log_id)
+        return "logs/mitm_proxy_log" + str(self.log_id)
 
     def get_network_monitor_log(self):
-        return "network_monitor_log" + str(self.log_id)
+        return "logs/network_monitor_log" + str(self.log_id)
 
 
 def analyze_dynamically(apk_name, static_analysis_results, smart_input_results):

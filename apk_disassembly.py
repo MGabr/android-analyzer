@@ -1,3 +1,5 @@
+# in top level directory, because of path problems with subprocess calls
+
 import subprocess
 
 
