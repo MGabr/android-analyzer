@@ -3,31 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <title>SSL Security Analyzer for Android applications</title>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 </head>
 <body>
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <ul class="flashes">
-                {% for message in messages %}
-                    <li>{{ messages }}</li>
-                {% endfor %}
+
+<div class="container">
+    <div class="header clearfix">
+        <nav>
+            <ul class="nav nav-pills pull-right">
+                <li role="presentation" class="active"><a href="{{ url_for('show_index') }}">Analyze</a></li>
+                <li role="presentation"><a href="{{ url_for('show_settings') }}">Settings</a></li>
             </ul>
-        {% endif %}
-    {% endwith %}
-    <form method="post" enctype="multipart/form-data" action="{{ url_for('upload_apk') }}">
-        <input type="file" name="apk">
-        <input type="submit" value="Upload APK to test" name="submit">
-    </form>
-    {% if log_analysis_results %}
-        <p>Your application is vulnerable!</p>
-        <ul>
-            {% for log_analysis_result in log_analysis_results %}
-                <li>
-                    {{ log_analysis_result.dynamic_analysis_result.scenario.scenario_settings.error_message }}
-                    Connected Ips: {{ log_analysis_result.connected_ips }}
-                </li>
+            <h3 class="text-muted">SSL Security Analyzer</h3>
+        </nav>
+    </div>
+    <div class="jumbotron">
+        <h1><strong>SSL Security Analyzer</strong><br>for Android applications</h1>
+        <p>Analyze your Android application for common SSL Security bugs which might make them vulnerable for man-in-the-middle attacks.</p>
+
+        <form method="post" enctype="multipart/form-data" action="{{ url_for('upload_apk') }}">
+            <label class="btn btn-lg btn-success btn-file" role="btn">
+                Upload and analyze APK file
+                <input type="file" name="apk" style="display: none;" onchange="this.form.submit()">
+            </label>
+        </form>
+    </div>
+
+    <div>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="flashes">
+            {% for message in messages %}
+                <div class="alert alert-danger" role="alert">{{ message }}</div>
             {% endfor %}
-        </ul>
-    {% endif %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% if log_analysis_results %}
+            <div class="alert alert-danger" role="alert"><strong>Your application is vulnerable!</strong></div>
+            {% for log_analysis_result in log_analysis_results %}
+                <div class="alert alert-danger" role="alert">
+                    {{ log_analysis_result.dynamic_analysis_result.scenario.scenario_settings.error_message }}
+                    <br>
+                    <br>
+                    IPs which could be intercepted with a man-in-the-middle attack:
+                    {{ display_comma_joined(log_analysis_result.connected_ips) }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
+
 </body>
 </html>

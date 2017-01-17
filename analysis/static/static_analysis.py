@@ -147,10 +147,10 @@ class StaticAnalyzer:
             # add constructor (init) to possibly vulnerable methods if trustmanager is implemented
             if trustmanager and "init" in method_name:
                 # add key to TM
-                self.VULN.append((key, 'trustmanager'))
+                self.VULN.append((key, 'TrustManager'))
             # add constructor (init) to possibly vulnerable methods if hostnameverifier is implemented
             elif hostnameverifier and "init" in method_name:
-                self.VULN.append((key, 'hostnameverifier'))
+                self.VULN.append((key, 'HostnameVerifier'))
             elif webviewclient:
                 if "init" in method_name:
                     webviewclient_key = key
@@ -163,7 +163,7 @@ class StaticAnalyzer:
         # add constructor (init) to possibly vulnerable methods if
         # webviewclient is extended and onReceivedSslError overwritten
         if on_received_ssl_error and webviewclient_key:
-            self.VULN.append((webviewclient_key, 'webviewclient'))
+            self.VULN.append((webviewclient_key, 'WebViewClient'))
 
         self.CLASS[class_name] = meth_arr
 

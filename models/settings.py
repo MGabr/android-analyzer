@@ -1,5 +1,6 @@
 from analysis.static.static_analysis import StaticAnalysisResults
 import itertools
+import textwrap
 
 
 class Settings:
@@ -34,13 +35,13 @@ class ScenarioSettings:
         self.enabled = enabled
         self.vuln_types = vuln_types
         self.certificate = certificate
-        self.error_message = error_message
+        self.error_message = textwrap.dedent(error_message)
 
     def get_vuln_types_str(self):
         if len(self.vuln_types) > 2:
-            return 'Vulnerable ' + ', '.join(self.vuln_types[-1]) + ' and ' + self.vuln_types[-1]
+            return ', '.join(self.vuln_types[-1]) + ' and ' + self.vuln_types[-1]
         else:
-            return 'Vulnerable ' + ' and '.join(self.vuln_types)
+            return ' and '.join(self.vuln_types)
 
 
 class Certificate:
@@ -50,7 +51,7 @@ class Certificate:
         self.id = self._ID.next()
         self.name = name
         self.is_default = is_default
-        self.description = description
+        self.description = textwrap.dedent(description)
         self.custom_cert = custom_cert
         self.custom_cert_domain = custom_cert_domain
         self.custom_ca = custom_ca

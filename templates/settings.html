@@ -3,31 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <title>Settings - SSL Security Analyzer for Android applications</title>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 </head>
 <body>
 
+<div class="container">
+    <div class="header clearfix">
+        <nav>
+            <ul class="nav nav-pills pull-right">
+                <li role="presentation" class="active"><a href="{{ url_for('show_index') }}">Analyze</a></li>
+                <li role="presentation"><a href="{{ url_for('show_settings') }}">Settings</a></li>
+            </ul>
+            <h3 class="text-muted">SSL Security Analyzer</h3>
+        </nav>
+    </div>
+
     <h1>Scenarios</h1>
-    <ul>
-        {% for sc in scenarios %}
-            <li>
-                <a href="{{ url_for('show_scenario', id=sc.id) }}">
-                    {{ sc.get_vuln_types_str() }} - {{ sc.certificate.name }}
-                </a>:
-                {% if sc.is_default %} default scenario {% else %} custom scenario {% endif %}-
-                {% if sc.enabled %} enabled {% else %} disabled {% endif %}
-            </li>
-        {% endfor %}
-    </ul>
+    <table class="table table-striped col-md-8">
+        <thead>
+            <tr>
+                <th>For custom implementations of</th>
+                <th>Certificate settings</th>
+                <th>Default scenario</th>
+                <th>Enabled</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sc in scenarios %}
+            <tr>
+                <td>
+                    <a href="{{ url_for('show_scenario', id=sc.id) }}">
+                        {{ sc.get_vuln_types_str() }}
+                    </a>
+                </td>
+                <td>
+                    {{ sc.certificate.name }}
+                </td>
+                <td>
+                    {{ sc.is_default }}
+                </td>
+                <td>
+                    {{ sc.enabled }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+
+    </table>
 
     <h1>Certificate Settings</h1>
-    <ul>
-        {% for c in certificates %}
-            <li>
-                <a href="{{ url_for('show_certificate', id=c.id) }}">{{ c.name }}</a>:
-                {% if c.is_default %} default certificate settings {% else %} custom certificate settings {% endif %}
-            </li>
-        {% endfor %}
-    </ul>
+    <table class="table table-striped col-md-8">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Default certificate settings</th>
+        </tr>
+        </thead>
+        <tbody>
+            {% for c in certificates %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('show_certificate', id=c.id) }}">{{ c.name }}</a>
+                    </td>
+                    <td>
+                        {{ c.is_default }}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
 </body>
 </html>

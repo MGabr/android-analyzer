@@ -49,9 +49,3 @@ def analyse_log(dynamic_analysis_result):
     os.remove(network.name)
 
     return LogAnalysisResult(dynamic_analysis_result, connected_ips)
-
-
-def print_error_messages(dynamic_analysis_result, connected_ips):
-    sc = dynamic_analysis_result.scenario
-    print sc.scenario_settings.error_message
-    print "connected ips : " + str(connected_ips)

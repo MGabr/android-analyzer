@@ -4,8 +4,10 @@ from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 from analysis.analysis import analyse
 from models.default_settings import default_scenarios, default_certificates
+from services.settings_service import get_certificates, get_vulnerability_types
 import socket
 import os
+
 
 
 # patch http://stackoverflow.com/a/25536820
@@ -70,7 +72,7 @@ def show_scenario(id):
         if str(sc.id) == id:
             scenario = sc
             break
-    return render_template('scenario.html', sc=scenario)
+    return render_template('scenario.html', sc=scenario, vuln_types=get_vulnerability_types(), certs=get_certificates())
 
 
 @app.route('/certificate/<id>')
@@ -90,12 +92,17 @@ def upload_apk():
         filename = filename.replace('.apk', '')
         log_analysis_results = analyse(filename)
         os.remove(os.path.join(app.config['UPLOADED_APKS_DEST'], filename + ".apk"))
-        flash("APK uploaded.")
     else:
         flash("APK upload failed.")
     return render_template('index.html', log_analysis_results=log_analysis_results)
 
 
+@app.context_processor
+def display_comma_joined_processor():
+    def display_comma_joined(set):
+        return ", ".join(set)
+    return dict(display_comma_joined=display_comma_joined)
+
 if __name__ == '__main__':
     # flask default port is 5000, but adb also runs on 5000
-    app.run(host='127.0.0.1', port=4001)
+    app.run(host='127.0.0.1', port=4003, threaded=True)

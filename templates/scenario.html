@@ -3,45 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <title>Scenario - SSL Security Analyzer for Android applications</title>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 </head>
 <body>
 
-    <h1>{{ sc.get_vuln_types_str() }} - {{ sc.certificate.name }}</h1>
+<div class="container">
+    <div class="header clearfix">
+        <nav>
+            <ul class="nav nav-pills pull-right">
+                <li role="presentation" class="active"><a href="/index">Analyze</a></li>
+                <li role="presentation"><a href="/settings">Settings</a></li>
+            </ul>
+            <h3 class="text-muted">SSL Security Analyzer</h3>
+        </nav>
+    </div>
 
-    <p>Is default scenario: {{ sc.is_default }}</p>
-    <p>Is enabled: {{ sc.enabled }}</p>
-    <p>Vulnerability types:</p>
-    <ul>
-        {% for vuln_type in sc.vuln_types %}
-            <li>{{ vuln_type }}</li>
+    <h1>Scenario</h1>
+
+    <label for="default">Is default scenario</label>
+    <input type="checkbox" class="form-control" id="default" {% if sc.is_default %}checked{% endif %} style="width: 33px">
+
+    <label for="enabled">Is enabled</label>
+    <input type="checkbox" class="form-control" id="enabled" {% if sc.enabled %}checked{% endif %} style="width: 33px">
+
+    <label for="vuln_types">For custom implementations of</label>
+    <select multiple class="form-control" id="vuln_types" style="overflow: hidden">
+        {% for vuln_type in vuln_types %}
+            <option value="{{ vuln_type }}" {% if vuln_type in sc.vuln_types %}selected{% endif %}>{{ vuln_type }}</option>
         {% endfor %}
-    </ul>
-    <p>Certificate:</p>
-    {% with c = sc.certificate %}
-        <p>{{ c.name }}</p>
-        <p>Is default certificate setting: {{ c.is_default }}</p>
-        <p>{{ c.description }}</p>
-        <p>Custom certificate:</p>
-        {% if c.custom_cert %}
-            <p>{{ c.custom_cert }}</p>
-        {% else %}
-            <p>None</p>
-        {% endif %}
-        <p>Custom certificate domain:</p>
-        {% if c.custom_cert_domain %}
-            <p>{{ c.custom_cert_domain }}</p>
-        {% else %}
-            <p>None</p>
-        {% endif %}
-        <p>Custom certificate authority:</p>
-        {% if c.custom_ca %}
-        <p>{{ c.custom_ca }}</p>
-        {% else %}
-        <p>None</p>
-        {% endif %}
-    {% endwith %}
-    <p>Error message:</p>
-    <p>{{ sc.error_message }}</p>
+    </select>
+
+    <label for="certificate">Certificate</label>
+    <select class="form-control" id="certificate">
+        {% for cert in certs %}
+            <option value="{{ cert.id }}" {% if cert.id == sc.certificate.id %}selected{% endif %}>{{ cert.name }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="errorMessage">Error message</label>
+    <textarea class="form-control" id="errorMessage" rows="3">{{ sc.error_message }}</textarea>
+
+</div>
 
 </body>
 </html>
