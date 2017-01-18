@@ -16,12 +16,13 @@ class Settings:
                 if static_analysis_result.vuln_type in scenario_setting.vuln_types:
                     matching += [static_analysis_result]
 
-            # create combined scenario for static analysis results with same activity name
-            for activity_name in {result.meth_nm for result in static_analysis_results.result_list}:
-                combined_result_list = [result for result in static_analysis_results.result_list
-                                        if result.meth_nm == activity_name]
-                combined_results = StaticAnalysisResults(static_analysis_results.package, combined_result_list)
-                scenarios += [Scenario(scenario_setting, activity_name, combined_results)]
+            if matching:
+                # create combined scenario for static analysis results with same activity name
+                for activity_name in {result.meth_nm for result in matching}:
+                    combined_result_list = [result for result in matching
+                                            if result.meth_nm == activity_name]
+                    combined_results = StaticAnalysisResults(static_analysis_results.package, combined_result_list)
+                    scenarios += [Scenario(scenario_setting, activity_name, combined_results)]
 
         return scenarios
 

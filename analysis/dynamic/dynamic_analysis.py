@@ -40,6 +40,8 @@ def analyze_dynamically(apk_name, static_analysis_results, smart_input_results):
 
     log_id = 0
     for scenario in default_settings.get_scenarios(static_analysis_results):
+        logger.debug("Checking for vulnerable " + "a nd ".join(scenario.scenario_settings.vuln_types) + " implementations")
+
         log_id += 1
         mitm_proxy_process = start_mitm_proxy(scenario.scenario_settings.certificate, log_id)
         network_monitor_process = start_network_monitor(emulator_id, static_analysis_results.package, log_id)

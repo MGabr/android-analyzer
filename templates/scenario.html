@@ -33,7 +33,7 @@
     <input type="checkbox" class="form-control" id="enabled" {% if sc.enabled %}checked{% endif %} style="width: 33px">
 
     <label for="vuln_types">For custom implementations of</label>
-    <select multiple class="form-control" id="vuln_types" style="overflow: hidden">
+    <select class="form-control" id="vuln_types" style="overflow: hidden">
         {% for vuln_type in vuln_types %}
             <option value="{{ vuln_type }}" {% if vuln_type in sc.vuln_types %}selected{% endif %}>{{ vuln_type }}</option>
         {% endfor %}

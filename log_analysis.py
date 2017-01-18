@@ -43,6 +43,8 @@ def analyse_log(dynamic_analysis_result):
             if re.match(ip_regex, line):
                 connected_ips |= {ip}
 
+    print "connected_ips: " + str(connected_ips)
+
     mitm_proxy.close()
     os.remove(mitm_proxy.name)
     network.close()

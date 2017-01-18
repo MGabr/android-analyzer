@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def start_mitm_proxy(certificate, log_id):
-    cmd = "mitmproxy -w logs/mitm_proxy_log" + str(log_id) + " -q --port 8080"
+    cmd = "mitmproxy -w logs/mitm_proxy_log" + str(log_id) + " --port 8080"
     if certificate.custom_ca:
         cmd += " --cadir "
     if certificate.custom_cert:
@@ -25,3 +25,4 @@ def start_mitm_proxy(certificate, log_id):
 
 def kill_mitm_proxy(mitm_proxy_process):
     mitm_proxy_process.kill()
+    mitm_proxy_process.communicate(input="y\n")
