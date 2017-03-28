@@ -98,10 +98,57 @@ def upload_apk():
 
 
 @app.context_processor
-def display_comma_joined_processor():
+def processor():
+
     def display_comma_joined(set):
         return ", ".join(set)
-    return dict(display_comma_joined=display_comma_joined)
+
+    def row_class_for_result(log_analysis_result):
+        if log_analysis_result.is_vulnerable():
+            return "danger"
+        elif log_analysis_result.dynamic_analysis_result.scenario.is_statically_vulnerable():
+            return "warning"
+        else:
+            return "success"
+        # TODO: for crashed analysis
+
+    def glyphicon_for_static_result(log_analysis_result):
+        if log_analysis_result.is_vulnerable():
+            return "glyphicon glyphicon-alert text-danger"
+        elif log_analysis_result.dynamic_analysis_result.scenario.is_statically_vulnerable():
+            return "glyphicon glyphicon-alert text-danger"
+        else:
+            return "glyphicon glyphicon-ok text-success"
+        # TODO: for crashed analysis
+
+    def glyphicon_for_dynamic_result(log_analysis_result):
+        if log_analysis_result.is_vulnerable():
+            return "glyphicon glyphicon-alert text-danger"
+        elif log_analysis_result.dynamic_analysis_result.scenario.is_statically_vulnerable():
+            return "glyphicon glyphicon-ok text-success"
+        else:
+            return "glyphicon glyphicon-minus text-muted"
+            # TODO: for crashed analysis
+
+    def vulntype_for_result(log_analysis_result):
+        log_analysis_result.dynamic_analysis_result.scenario.scenario_settings.vuln_type
+        return
+
+    def connected_hostnames_for_result(log_analysis_result):
+        return
+
+    def certificate_name_for_result(log_analysis_result):
+        return
+
+    def trusted_certificate_names_for_result(log_analysis_result):
+        return
+
+    return dict(
+        display_comma_joined=display_comma_joined,
+        row_class_for_result=row_class_for_result,
+        glyphicon_for_static_result=glyphicon_for_static_result,
+        glyphicon_for_dynamic_result=glyphicon_for_dynamic_result)
+
 
 if __name__ == '__main__':
     # flask default port is 5000, but adb also runs on 5000

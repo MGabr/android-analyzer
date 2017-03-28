@@ -9,11 +9,12 @@ class Settings:
 
     def get_scenarios(self, static_analysis_results):
         scenarios = []
+        solved_scenarios = []
         for scenario_setting in self.scenarios_settings:
             matching = []
             # get only static analysis results with the right vulnerability type
             for static_analysis_result in static_analysis_results.result_list:
-                if static_analysis_result.vuln_type in scenario_setting.vuln_types:
+                if static_analysis_result.vuln_type in scenario_setting.vuln_type:
                     matching += [static_analysis_result]
 
             if matching:
@@ -23,8 +24,12 @@ class Settings:
                                             if result.meth_nm == activity_name]
                     combined_results = StaticAnalysisResults(static_analysis_results.package, combined_result_list)
                     scenarios += [Scenario(scenario_setting, activity_name, combined_results)]
+            else:
+                # there is no static analysis result with the right vulnerability type for this scenario
+                # -> dynamic analysis is not required
+                solved_scenarios += [Scenario(scenario_setting)]
 
-        return scenarios
+        return scenarios, solved_scenarios
 
 
 class ScenarioSettings:
@@ -32,7 +37,7 @@ class ScenarioSettings:
 
     def __init__(
             self,
-            vuln_types,
+            vuln_type,
             mitm_certificate,
             sys_certificates,
             user_certificates,
@@ -42,17 +47,15 @@ class ScenarioSettings:
         self.id = self._ID.next()
         self.is_default = is_default
         self.enabled = enabled
-        self.vuln_types = vuln_types
+        self.vuln_type = vuln_type
         self.mitm_certificate = mitm_certificate
         self.sys_certificates = sys_certificates
         self.user_certificates = user_certificates
         self.error_message = textwrap.dedent(error_message)
 
+    # TODO: remove
     def get_vuln_types_str(self):
-        if len(self.vuln_types) > 2:
-            return ', '.join(self.vuln_types[-1]) + ' and ' + self.vuln_types[-1]
-        else:
-            return ' and '.join(self.vuln_types)
+        return self.vuln_type
 
     def get_sys_certificates_ids(self):
         return [s.id for s in self.sys_certificates]
@@ -75,7 +78,12 @@ class Certificate:
 
 
 class Scenario:
-    def __init__(self, scenario_settings, activity_name, static_analysis_results):
+    # if there is no corresponding static analysis result / the dynamic analysis does not need to be run
+    # activity_name and static_analysis_results should not be set
+    def __init__(self, scenario_settings, activity_name=None, static_analysis_results=None):
         self.scenario_settings = scenario_settings
         self.activity_name = activity_name
         self.static_analysis_results = static_analysis_results
+
+    def is_statically_vulnerable(self):
+        return self.activity_name and self.static_analysis_results

@@ -2,20 +2,32 @@
 
 import re
 import os
+import socket
 
 
 class LogAnalysisResult:
-    def __init__(self, dynamic_analysis_result, connected_ips):
+    def __init__(self, dynamic_analysis_result, connected_ips=None):
         self.dynamic_analysis_result = dynamic_analysis_result
         self.connected_ips = connected_ips
+        self.connected_hostnames_ips = dict()
+
+        for connected_ip in self.connected_ips:
+            hostname = socket.gethostbyaddr(connected_ip)
+            if hostname not in self.connected_hostnames_ips:
+                self.connected_hostnames_ips[hostname] = list()
+            self.connected_hostnames_ips[hostname] += connected_ip
+
+    def is_vulnerable(self):
+        return self.connected_ips
 
 
 def analyse_logs(dynamic_analysis_results):
     log_analysis_results = []
     for dynamic_analysis_result in dynamic_analysis_results:
-        log_analysis_result = analyse_log(dynamic_analysis_result)
-        if log_analysis_result.connected_ips:
-            log_analysis_results += [log_analysis_result]
+        if dynamic_analysis_result.has_been_run:
+            log_analysis_results += LogAnalysisResult(dynamic_analysis_result, analyse_log(dynamic_analysis_result))
+        else:
+            log_analysis_results += LogAnalysisResult(dynamic_analysis_result)
     return log_analysis_results
 
 
@@ -51,4 +63,4 @@ def analyse_log(dynamic_analysis_result):
     # network.close()
     # os.remove(network.name)
 
-    return LogAnalysisResult(dynamic_analysis_result, connected_ips)
+    return connected_ips

@@ -1,0 +1,62 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SSL Security Analyzer for Android applications</title>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" /> -->
+    <link rel="stylesheet" href="../static/css/style.css">
+</head>
+<body>
+
+
+<div class="container">
+    <div class="header clearfix">
+        <nav>
+            <ul class="nav nav-pills pull-right">
+                <li role="presentation" class="active"><a href="#">Analyze</a></li>
+                <li role="presentation"><a href="#">Settings</a></li>
+            </ul>
+            <h3 class="text-muted">SSL Security Analyzer</h3>
+        </nav>
+
+    </div>
+
+    <div>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Message</th>
+                <th colspan="2">Static Analysis</th>
+                <th colspan="2">Dynamic Analysis</th>
+                <th>Certificate Settings</th>
+                <th>System trusted certificates</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for lr in log_analysis_results %}
+                <tr class="{{ row_class_for_result(lr) }}">
+                    <td></td>
+                    <td><span class="{{ glyphicon_for_static_result(lr) }}"></span></td>
+                    <td>{{ vulntype_for_result(lr) }} </td>
+                    <td><span class="{{ glyphicon_for_dynamic_result(lr) }}"></span></td>
+                    <td>{{ connected_hostnames_for_result(lr) }}</td>
+                    <td>custom_ca - {{ certificate_name_for_result(lr) }}</td>
+                    <td>{{ trusted_certificate_names_for_result(lr) }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>

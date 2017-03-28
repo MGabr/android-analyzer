@@ -15,9 +15,13 @@ logger = logging.getLogger(__name__)
 
 
 class DynamicAnalysisResult:
-    def __init__(self, scenario, log_id):
+    # if no dynamic analysis was run, log_id should not be set
+    def __init__(self, scenario, log_id=None):
         self.scenario = scenario
         self.log_id = log_id
+
+    def has_been_run(self):
+        return self.log_id
 
     def get_mitm_proxy_log(self):
         return "logs/mitm_proxy_log" + str(self.log_id)
@@ -40,7 +44,8 @@ def analyze_dynamically(apk_name, static_analysis_results, smart_input_results):
     smart_input_assignment = SmartInputAssignment()
 
     log_id = 0
-    for scenario in default_settings.get_scenarios(static_analysis_results):
+    scenarios, solved_scenarios = default_settings.get_scenarios(static_analysis_results)
+    for scenario in scenarios:
         logger.debug("Checking for vulnerable " + " and ".join(scenario.scenario_settings.vuln_types) + " implementations")
 
         log_id += 1
@@ -113,6 +118,8 @@ def analyze_dynamically(apk_name, static_analysis_results, smart_input_results):
         dynamic_analysis_results += [DynamicAnalysisResult(scenario, log_id)]
 
     uninstall_apk(emulator_id, static_analysis_results.package)
+
+    dynamic_analysis_results += [DynamicAnalysisResult(solved_scenario) for solved_scenario in solved_scenarios]
 
     return dynamic_analysis_results
 
