@@ -1,6 +1,6 @@
 # in top level directory, because of path problems with subprocess calls
 
-import subprocess
+import subprocess32 as subprocess
 import logging
 import shlex
 
@@ -29,7 +29,7 @@ def trace_pid(emulator_id, pid, log_id):
                                                stderr=open("logs/network_monitor_log" + str(log_id), "w"),
                                                stdin=subprocess.PIPE)
 
-    strace_cmd = "strace -p " + pid + " -q -f -e trace=network\n"
+    strace_cmd = "strace -p " + pid + " -q -f -e connect\n"
     logger.debug(strace_cmd)
     network_monitor_process.stdin.write(strace_cmd)
 
@@ -38,3 +38,9 @@ def trace_pid(emulator_id, pid, log_id):
 
 def kill_network_monitor(network_monitor_process):
     network_monitor_process.kill()
+    try:
+        network_monitor_process.wait(timeout=10)
+    except subprocess.TimeoutExpired as e:
+        logger.error("Could not close network monitor: {}", e)
+    except OSError as e:
+        logger.warn(e)

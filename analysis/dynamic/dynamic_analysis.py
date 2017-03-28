@@ -45,7 +45,7 @@ def analyze_dynamically(apk_name, static_analysis_results, smart_input_results):
 
         log_id += 1
         mitm_proxy_process = start_mitm_proxy(scenario.scenario_settings.mitm_certificate, log_id)
-        network_monitor_process = start_network_monitor(emulator_id, static_analysis_results.package, log_id)
+        # network_monitor_process = start_network_monitor(emulator_id, static_analysis_results.package, log_id)
 
         if scenario.scenario_settings.sys_certificates:
             for sys_certificate in scenario.scenario_settings.sys_certificates:
@@ -107,7 +107,7 @@ def analyze_dynamically(apk_name, static_analysis_results, smart_input_results):
                         break
         # TODO: listviews
 
-        kill_network_monitor(network_monitor_process)
+        # kill_network_monitor(network_monitor_process)
         kill_mitm_proxy(mitm_proxy_process)
 
         dynamic_analysis_results += [DynamicAnalysisResult(scenario, log_id)]

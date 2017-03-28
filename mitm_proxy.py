@@ -1,6 +1,6 @@
 # in top level directory, because of path problems with subprocess calls
 
-import subprocess
+import subprocess32 as subprocess
 import logging
 import shlex
 
@@ -30,3 +30,10 @@ def start_mitm_proxy(certificate, log_id):
 def kill_mitm_proxy(mitm_proxy_process):
     mitm_proxy_process.kill()
     mitm_proxy_process.communicate(input="y\n")
+    try:
+        mitm_proxy_process.wait(timeout=10)
+    except subprocess.TimeoutExpired as e:
+        logger.error("Could not close network monitor: {}", e)
+    except OSError as e:
+        logger.warn(e)
+

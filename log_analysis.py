@@ -21,7 +21,7 @@ def analyse_logs(dynamic_analysis_results):
 
 def analyse_log(dynamic_analysis_result):
     mitm_proxy = open(dynamic_analysis_result.get_mitm_proxy_log(), "r")
-    network = open(dynamic_analysis_result.get_network_monitor_log(), "r")
+    # network = open(dynamic_analysis_result.get_network_monitor_log(), "r")
 
     ssl_regex = r"ssl_established,4:true"
     between_ssl_ip_regex = r"(?!ssl_established).*address,[0-9]{1,2}:[0-9]{1,2}:address,[0-9]{1,2}:[0-9]{1,2}:"
@@ -36,18 +36,19 @@ def analyse_log(dynamic_analysis_result):
 
     print "ips: " + str(ips)
 
-    connected_ips = set()
-    for line in network:
-        for ip in ips:
-            ip_regex = r".*" + ip + r".*" # TODO: escape dots
-            if re.match(ip_regex, line):
-                connected_ips |= {ip}
+    connected_ips = ips
+    # connected_ips = set()
+    # for line in network:
+    #     for ip in ips:
+    #         ip_regex = r".*" + ip + r".*" # TODO: escape dots
+    #         if re.match(ip_regex, line):
+    #             connected_ips |= {ip}
 
     print "connected_ips: " + str(connected_ips)
 
     mitm_proxy.close()
     os.remove(mitm_proxy.name)
-    network.close()
-    os.remove(network.name)
+    # network.close()
+    # os.remove(network.name)
 
     return LogAnalysisResult(dynamic_analysis_result, connected_ips)
