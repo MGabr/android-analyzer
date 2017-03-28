@@ -39,10 +39,23 @@
         {% endfor %}
     </select>
 
-    <label for="certificate">Certificate</label>
-    <select class="form-control" id="certificate">
+    <label for="mitm_certificate">MITM Certificate</label>
+    <select class="form-control" id="mitm_certificate">
         {% for cert in certs %}
-            <option value="{{ cert.id }}" {% if cert.id == sc.certificate.id %}selected{% endif %}>{{ cert.name }}</option>
+            <option value="{{ cert.id }}" {% if cert.id == sc.mitm_certificate.id %}selected{% endif %}>{{ cert.name }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="sys_certificates">System trusted certificates</label>
+    <select multiple class="form-control" id="sys_certificates">
+        {% for cert in certs %}
+            <option value="{{ cert.id }}" {% if cert.id in sc.get_sys_certificates_ids() %}selected{% endif %}>{{ cert.name }}</option>
+        {% endfor %}
+    </select>
+    <label for="user_certificates">User trusted certificates</label>
+    <select multiple class="form-control" id="user_certificates">
+        {% for cert in certs %}
+            <option value="{{ cert.id }}" {% if cert.id in sc.get_user_certificates_ids() %}selected{% endif %}>{{ cert.name }}</option>
         {% endfor %}
     </select>
 

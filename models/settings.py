@@ -30,12 +30,22 @@ class Settings:
 class ScenarioSettings:
     _ID = itertools.count()
 
-    def __init__(self, vuln_types, certificate, error_message, is_default=True, enabled=True):
+    def __init__(
+            self,
+            vuln_types,
+            mitm_certificate,
+            sys_certificates,
+            user_certificates,
+            error_message,
+            is_default=True,
+            enabled=True):
         self.id = self._ID.next()
         self.is_default = is_default
         self.enabled = enabled
         self.vuln_types = vuln_types
-        self.certificate = certificate
+        self.mitm_certificate = mitm_certificate
+        self.sys_certificates = sys_certificates
+        self.user_certificates = user_certificates
         self.error_message = textwrap.dedent(error_message)
 
     def get_vuln_types_str(self):
@@ -43,6 +53,12 @@ class ScenarioSettings:
             return ', '.join(self.vuln_types[-1]) + ' and ' + self.vuln_types[-1]
         else:
             return ' and '.join(self.vuln_types)
+
+    def get_sys_certificates_ids(self):
+        return [s.id for s in self.sys_certificates]
+
+    def get_user_certificates_ids(self):
+        return [u.id for u in self.user_certificates]
 
 
 class Certificate:

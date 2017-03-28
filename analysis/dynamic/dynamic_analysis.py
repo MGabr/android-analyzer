@@ -8,6 +8,7 @@ from mitm_proxy import start_mitm_proxy, kill_mitm_proxy
 from network_monitor import start_network_monitor, kill_network_monitor
 from models.smart_input_assignments import SmartInputAssignment
 from models.default_settings import default_settings
+from certificate_installation import install_as_system_certificate
 
 
 logger = logging.getLogger(__name__)
@@ -40,11 +41,15 @@ def analyze_dynamically(apk_name, static_analysis_results, smart_input_results):
 
     log_id = 0
     for scenario in default_settings.get_scenarios(static_analysis_results):
-        logger.debug("Checking for vulnerable " + "a nd ".join(scenario.scenario_settings.vuln_types) + " implementations")
+        logger.debug("Checking for vulnerable " + " and ".join(scenario.scenario_settings.vuln_types) + " implementations")
 
         log_id += 1
-        mitm_proxy_process = start_mitm_proxy(scenario.scenario_settings.certificate, log_id)
+        mitm_proxy_process = start_mitm_proxy(scenario.scenario_settings.mitm_certificate, log_id)
         network_monitor_process = start_network_monitor(emulator_id, static_analysis_results.package, log_id)
+
+        if scenario.scenario_settings.sys_certificates:
+            for sys_certificate in scenario.scenario_settings.sys_certificates:
+                install_as_system_certificate(emulator_id, sys_certificate)
 
         # reset the window, press enter two times
         press_enter(emulator_id)
