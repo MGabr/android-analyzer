@@ -45,19 +45,6 @@
         </div>
         {% endif %}
         {% endwith %}
-
-        {% if log_analysis_results %}
-            <div class="alert alert-danger" role="alert"><strong>Your application is vulnerable!</strong></div>
-            {% for log_analysis_result in log_analysis_results %}
-                <div class="alert alert-danger" role="alert">
-                    {{ log_analysis_result.dynamic_analysis_result.scenario.scenario_settings.error_message }}
-                    <br>
-                    <br>
-                    IPs which could be intercepted with a man-in-the-middle attack:
-                    {{ display_comma_joined(log_analysis_result.connected_ips) }}
-                </div>
-            {% endfor %}
-        {% endif %}
     </div>
 </div>
 

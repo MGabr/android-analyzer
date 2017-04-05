@@ -14,7 +14,7 @@ class Settings:
             matching = []
             # get only static analysis results with the right vulnerability type
             for static_analysis_result in static_analysis_results.result_list:
-                if static_analysis_result.vuln_type in scenario_setting.vuln_type:
+                if static_analysis_result.vuln_type in scenario_setting.vuln_types:
                     matching += [static_analysis_result]
 
             if matching:
@@ -37,7 +37,7 @@ class ScenarioSettings:
 
     def __init__(
             self,
-            vuln_type,
+            vuln_types,
             mitm_certificate,
             sys_certificates,
             user_certificates,
@@ -47,7 +47,7 @@ class ScenarioSettings:
         self.id = self._ID.next()
         self.is_default = is_default
         self.enabled = enabled
-        self.vuln_type = vuln_type
+        self.vuln_types = vuln_types
         self.mitm_certificate = mitm_certificate
         self.sys_certificates = sys_certificates
         self.user_certificates = user_certificates
@@ -55,7 +55,7 @@ class ScenarioSettings:
 
     # TODO: remove
     def get_vuln_types_str(self):
-        return self.vuln_type
+        return self.vuln_types
 
     def get_sys_certificates_ids(self):
         return [s.id for s in self.sys_certificates]

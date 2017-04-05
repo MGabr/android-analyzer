@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,14 +8,19 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <!-- Optional theme -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <script
+            src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+            integrity="sha256-k2WSCIexGzOj3Euiig+TlR8gA0EmPjuc79OEeY5L45g="
+            crossorigin="anonymous"></script>
     <!-- Latest compiled and minified JavaScript -->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 
-    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" /> -->
-    <link rel="stylesheet" href="../static/css/style.css">
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
 </head>
 <body>
-
 
 <div class="container">
     <div class="header clearfix">
@@ -34,9 +38,9 @@
         <table class="table">
             <thead>
             <tr>
-                <th>Message</th>
                 <th colspan="2">Static Analysis</th>
                 <th colspan="2">Dynamic Analysis</th>
+                <th>Scenario Info</th>
                 <th>Certificate Settings</th>
                 <th>System trusted certificates</th>
             </tr>
@@ -44,19 +48,42 @@
             <tbody>
             {% for lr in log_analysis_results %}
                 <tr class="{{ row_class_for_result(lr) }}">
-                    <td></td>
-                    <td><span class="{{ glyphicon_for_static_result(lr) }}"></span></td>
+                    <td>
+                        <span class="{{ glyphicon_for_static_result(lr) }} clickable"
+                              data-toggle="popover"
+                              title="{{ vulntype_tooltiptitle_for_result(lr) }}"
+                              data-content="{{ vulntype_tooltip_for_result(lr) }}"></span>
+                    </td>
                     <td>{{ vulntype_for_result(lr) }} </td>
-                    <td><span class="{{ glyphicon_for_dynamic_result(lr) }}"></span></td>
-                    <td>{{ connected_hostnames_for_result(lr) }}</td>
-                    <td>custom_ca - {{ certificate_name_for_result(lr) }}</td>
-                    <td>{{ trusted_certificate_names_for_result(lr) }}</td>
+                    <td>
+                        <span class="{{ glyphicon_for_dynamic_result(lr) }} clickable"
+                              data-toggle="popover"
+                              title="{{ connected_hostnames_tooltiptitle_for_result(lr) }}"
+                              data-content="{{ connected_hostnames_tooltip_for_result(lr) }}"></span>
+                    </td>
+                    <td class="fit">
+                        {% for line in connected_hostnames_for_result(lr).splitlines() %}
+                            {{ line }}<br />
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <!-- TODO: change error message of scenario to be info message -->
+                        <span class="glyphicon glyphicon-info clickable"
+                              data-toggle="popover"
+                              title=""
+                              data-content=""></span>
+                    </td>
+                    <td>custom_ca - <span class="fit">{{ certificate_name_for_result(lr) }}</span></td>
+                    <td class="fit">
+                        {% for line in trusted_certificate_names_for_result(lr).splitlines() %}
+                            {{ line }}<br />
+                        {% endfor %}
+                    </td>
                 </tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
-
 </body>
 </html>

@@ -1,3 +1,27 @@
 .glyphicon {
     font-size: 35px;
 }
+
+/* adjust width to content */
+.table th.fit,
+.table td.fit {
+    white-space: nowrap;
+}
+.popover {
+    max-width: 100%;
+    white-space: nowrap;
+}
+
+.clickable {
+    cursor: pointer;
+}
+
+.popover-title-danger {
+    background: #f2dede;
+}
+.popover-title-muted {
+    background: #fcf8e3;
+}
+.popover-title-success {
+    background: #dff0d8;
+}

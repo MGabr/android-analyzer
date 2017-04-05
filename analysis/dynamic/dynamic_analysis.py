@@ -23,6 +23,9 @@ class DynamicAnalysisResult:
     def has_been_run(self):
         return self.log_id
 
+    def is_statically_vulnerable(self):
+        return self.scenario.is_statically_vulnerable()
+
     def get_mitm_proxy_log(self):
         return "logs/mitm_proxy_log" + str(self.log_id)
 

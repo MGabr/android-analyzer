@@ -15,10 +15,11 @@ def get_emulator():
     # TODO: what to do about these emulator types?, use specific one? support multiple?
     # TODO: creating a new avd example: android create avd -n <name> -t <targetID>
     # TODO: maybe use -http-proxy argument, maybe also -gpu on
+    no_audio = "export QEMU_AUDIO_DRV=none && "
     emulator_type = "Nexus_5_API_24"
     port = "5554"
-    cmd = "~/Android/Sdk/tools/emulator -avd " + emulator_type + " -port " + port + \
-          " -wipe-data -use-system-libs -writable-system -http-proxy http://localhost:8080 &"
+    other_opts = "-wipe-data -use-system-libs -writable-system -http-proxy http://localhost:8080"
+    cmd = no_audio + "~/Android/Sdk/tools/emulator -avd " + emulator_type + " -port " + port + " " + other_opts + "  &"
     logger.debug(cmd)
     subprocess.check_call(cmd, shell=True)
     emulator_id = "emulator-" + port

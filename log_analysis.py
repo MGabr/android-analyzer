@@ -2,7 +2,9 @@
 
 import re
 import os
+import urllib2
 import socket
+from urlparse import urlparse
 
 
 class LogAnalysisResult:
@@ -11,23 +13,37 @@ class LogAnalysisResult:
         self.connected_ips = connected_ips
         self.connected_hostnames_ips = dict()
 
-        for connected_ip in self.connected_ips:
-            hostname = socket.gethostbyaddr(connected_ip)
-            if hostname not in self.connected_hostnames_ips:
-                self.connected_hostnames_ips[hostname] = list()
-            self.connected_hostnames_ips[hostname] += connected_ip
+        if connected_ips:
+            for connected_ip in self.connected_ips:
+
+                print "connected_ip"
+                print connected_ip
+                try:
+                    redirected_url = urllib2.urlopen("http://" + connected_ip).geturl()
+                    hostname = urlparse(redirected_url).hostname
+                except urllib2.URLError:
+                    # fallback for connection refused, e.g. for localhost
+                    # TODO: is it even right, that a MITM attack on localhost was successful??
+                    hostname, _, _ = socket.gethostbyaddr(connected_ip)
+
+                if hostname not in self.connected_hostnames_ips:
+                    self.connected_hostnames_ips[hostname] = list()
+                self.connected_hostnames_ips[hostname] += [connected_ip]
 
     def is_vulnerable(self):
         return self.connected_ips
+
+    def is_statically_vulnerable(self):
+        return self.dynamic_analysis_result.is_statically_vulnerable()
 
 
 def analyse_logs(dynamic_analysis_results):
     log_analysis_results = []
     for dynamic_analysis_result in dynamic_analysis_results:
-        if dynamic_analysis_result.has_been_run:
-            log_analysis_results += LogAnalysisResult(dynamic_analysis_result, analyse_log(dynamic_analysis_result))
+        if dynamic_analysis_result.has_been_run():
+            log_analysis_results += [LogAnalysisResult(dynamic_analysis_result, analyse_log(dynamic_analysis_result))]
         else:
-            log_analysis_results += LogAnalysisResult(dynamic_analysis_result)
+            log_analysis_results += [LogAnalysisResult(dynamic_analysis_result)]
     return log_analysis_results
 
 
