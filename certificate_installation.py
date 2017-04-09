@@ -1,6 +1,7 @@
 import logging
 import subprocess
 import re
+from definitions import CERTS_DIR
 
 
 logger = logging.getLogger(__name__)
@@ -10,7 +11,7 @@ logger = logging.getLogger(__name__)
 # TODO: deinstall
 
 def install_as_system_certificate(emulator_id, cert):
-    cert_filename = cert.custom_ca
+    cert_filename = CERTS_DIR + cert.custom_ca
 
     # extract only certificate part - without private key
     if not cert_filename.endswith(".crt"):

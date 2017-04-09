@@ -3,6 +3,7 @@
 import subprocess32 as subprocess
 import logging
 import shlex
+from definitions import LOGS_DIR
 
 
 logger = logging.getLogger(__name__)
@@ -26,7 +27,7 @@ def trace_pid(emulator_id, pid, log_id):
     shell_cmd = "adb -s " + emulator_id + " shell su"
     logger.debug(shell_cmd)
     network_monitor_process = subprocess.Popen(shlex.split(shell_cmd),
-                                               stderr=open("logs/network_monitor_log" + str(log_id), "w"),
+                                               stderr=open(LOGS_DIR + "network_monitor_log" + str(log_id), "w"),
                                                stdin=subprocess.PIPE)
 
     strace_cmd = "strace -p " + pid + " -q -f -e connect\n"

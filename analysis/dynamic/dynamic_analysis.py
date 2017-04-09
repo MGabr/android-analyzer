@@ -5,10 +5,11 @@ import logging
 import re
 from com.dtmilano.android.viewclient import ViewClient
 from mitm_proxy import start_mitm_proxy, kill_mitm_proxy
-from network_monitor import start_network_monitor, kill_network_monitor
 from models.smart_input_assignments import SmartInputAssignment
-from models.default_settings import default_settings
+from models.scenario_settings import ScenarioSettings
 from certificate_installation import install_as_system_certificate
+from models.settings import Settings
+from definitions import INPUT_APK_DIR, LOGS_DIR
 
 
 logger = logging.getLogger(__name__)
@@ -27,17 +28,17 @@ class DynamicAnalysisResult:
         return self.scenario.is_statically_vulnerable()
 
     def get_mitm_proxy_log(self):
-        return "logs/mitm_proxy_log" + str(self.log_id)
+        return LOGS_DIR + "mitm_proxy_log" + str(self.log_id)
 
     def get_network_monitor_log(self):
-        return "logs/network_monitor_log" + str(self.log_id)
+        return LOGS_DIR + "network_monitor_log" + str(self.log_id)
 
 
 def analyze_dynamically(apk_name, static_analysis_results, smart_input_results):
     dynamic_analysis_results = []
 
     emulator_id = device_manager.get_emulator()
-    apk_path = "input_apks/" + apk_name + ".apk"
+    apk_path =  INPUT_APK_DIR + apk_name + ".apk"
 
     install_apk(emulator_id, apk_path)
 
@@ -47,9 +48,10 @@ def analyze_dynamically(apk_name, static_analysis_results, smart_input_results):
     smart_input_assignment = SmartInputAssignment()
 
     log_id = 0
-    scenarios, solved_scenarios = default_settings.get_scenarios(static_analysis_results)
+    scenario_settings = ScenarioSettings.query.filter_by(enabled=True).all()
+    scenarios, solved_scenarios = Settings(scenario_settings).get_scenarios(static_analysis_results)
     for scenario in scenarios:
-        logger.debug("Checking for vulnerable " + " and ".join(scenario.scenario_settings.vuln_types) + " implementations")
+        logger.debug("Checking for vulnerable " + scenario.scenario_settings.vuln_type.value + " implementations")
 
         log_id += 1
         mitm_proxy_process = start_mitm_proxy(scenario.scenario_settings.mitm_certificate, log_id)

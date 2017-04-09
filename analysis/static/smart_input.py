@@ -5,6 +5,7 @@ from androguard.core.bytecodes.dvm import DalvikVMFormat
 from xml.dom import minidom
 import re
 import logging
+from definitions import INPUT_APK_DIR
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -64,7 +65,7 @@ def parse_const(instruction):
 class GetFieldType:
 
     def __init__(self, apk_name):
-        self.apk = "input_apks/" + apk_name + ".apk"
+        self.apk = INPUT_APK_DIR + apk_name + ".apk"
 
         logger.debug("Analyzing " + self.apk)
 

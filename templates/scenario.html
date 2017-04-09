@@ -1,16 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Scenario - SSL Security Analyzer for Android applications</title>
-
-    <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-    <!-- Optional theme -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-    <!-- Latest compiled and minified JavaScript -->
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-</head>
+{% include "partials/head.html" %}
 <body>
 
 <div class="container">
@@ -26,41 +16,71 @@
 
     <h1>Scenario</h1>
 
-    <label for="default">Is default scenario</label>
-    <input type="checkbox" class="form-control" id="default" {% if sc.is_default %}checked{% endif %} style="width: 33px">
+    <form id="form">
+        <label for="is_default">Is default scenario</label>
+        <input type="checkbox" class="form-control" id="is_default" name="is_default" style="width: 33px" disabled
+               {% if sc.is_default %}checked{% endif %}>
 
-    <label for="enabled">Is enabled</label>
-    <input type="checkbox" class="form-control" id="enabled" {% if sc.enabled %}checked{% endif %} style="width: 33px">
+        <label for="enabled">Is enabled</label>
+        <input type="checkbox" class="form-control" id="enabled" name="enabled" style="width: 33px"
+               {% if sc.enabled %}checked{% endif %}
+               {% if sc.is_default %}disabled{% endif %}>
 
-    <label for="vuln_types">For custom implementations of</label>
-    <select class="form-control" id="vuln_types" style="overflow: hidden">
-        {% for vuln_type in vuln_types %}
-            <option value="{{ vuln_type }}" {% if vuln_type in sc.vuln_types %}selected{% endif %}>{{ vuln_type }}</option>
-        {% endfor %}
-    </select>
+        <label for="vuln_type">For custom implementations of</label>
+        <select class="form-control" id="vuln_type"  name="vuln_type" {% if sc.is_default %}disabled{% endif %}>
+            <option></option>
+            {% for vuln_type in vuln_types %}
+                <option value="{{ vuln_type.value }}" {% if vuln_type == sc.vuln_type %}selected{% endif %}>
+                    {{ vuln_type.value }}
+                </option>
+            {% endfor %}
+        </select>
 
-    <label for="mitm_certificate">MITM Certificate</label>
-    <select class="form-control" id="mitm_certificate">
-        {% for cert in certs %}
-            <option value="{{ cert.id }}" {% if cert.id == sc.mitm_certificate.id %}selected{% endif %}>{{ cert.name }}</option>
-        {% endfor %}
-    </select>
+        <label for="mitm_certificate">MITM Certificate</label>
+        <select class="form-control" id="mitm_certificate" name="mitm_certificate" {% if sc.is_default %}disabled{% endif %}>
+            <option></option>
+            {% for cert in certs %}
+                <option value="{{ cert.id }}" {% if cert.id == sc.mitm_certificate.id %}selected{% endif %}>
+                    {{ cert.name }}
+                </option>
+            {% endfor %}
+        </select>
 
-    <label for="sys_certificates">System trusted certificates</label>
-    <select multiple class="form-control" id="sys_certificates">
-        {% for cert in certs %}
-            <option value="{{ cert.id }}" {% if cert.id in sc.get_sys_certificates_ids() %}selected{% endif %}>{{ cert.name }}</option>
-        {% endfor %}
-    </select>
-    <label for="user_certificates">User trusted certificates</label>
-    <select multiple class="form-control" id="user_certificates">
-        {% for cert in certs %}
-            <option value="{{ cert.id }}" {% if cert.id in sc.get_user_certificates_ids() %}selected{% endif %}>{{ cert.name }}</option>
-        {% endfor %}
-    </select>
+        <label for="sys_certificates">System trusted certificates</label>
+        <select multiple class="form-control" id="sys_certificates" name="sys_certificates"
+                {% if sc.is_default %}disabled{% endif %}>
+            <option disabled></option>
+            {% for cert in certs %}
+                <option value="{{ cert.id }}" {% if cert.id in sc.get_sys_certificates_ids() %}selected{% endif %}>
+                    {{ cert.name }}
+                </option>
+            {% endfor %}
+        </select>
+        <label for="user_certificates">User trusted certificates</label>
+        <select multiple class="form-control" id="user_certificates" name="user_certificates"
+                {% if sc.is_default %}disabled{% endif %}>
+            <option></option>
+            {% for cert in certs %}
+                <option value="{{ cert.id }}" {% if cert.id in sc.get_user_certificates_ids() %}selected{% endif %}>
+                    {{ cert.name }}
+                </option>
+            {% endfor %}
+        </select>
 
-    <label for="errorMessage">Error message</label>
-    <textarea class="form-control" id="errorMessage" rows="3">{{ sc.error_message }}</textarea>
+        <label for="info_message">Info message</label>
+        <textarea class="form-control" id="info_message" name="info_message" rows="3"
+                  {% if sc.is_default %}disabled{% endif %}>{{ sc.info_message }}</textarea>
+    </form>
+
+    {% if new %}
+    <button id="add-btn" class="btn btn-primary" ajax-form="form"
+            ajax-url="{{ url_for('add_scenario') }}" ajax-method="POST">Add</button>
+    {% elif not sc.is_default %}
+    <button id="edit-btn" class="btn btn-primary" ajax-form="form"
+            ajax-url="{{ url_for('edit_scenario', id=sc.id) }}" ajax-method="PUT">Edit</button>
+    <button id="delete-btn" class="btn btn-danger"
+            ajax-url="{{ url_for('delete_scenario', id=sc.id) }}" ajax-method="DELETE">Delete</button>
+    {% endif %}
 
 </div>
 
