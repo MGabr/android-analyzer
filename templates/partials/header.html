@@ -1,0 +1,16 @@
+<div class="header clearfix">
+    <nav>
+        <ul class="nav nav-pills pull-right">
+            <li role="presentation" class="active"><a href="{{ url_for('show_index') }}">Analyze</a></li>
+            {% if current_user.is_authenticated %}
+                <li role="presentation"><a href="{{ url_for('show_settings') }}">Settings</a></li>
+                <li role="presentation">
+                    <a id="logout-btn" class="clickable" ajax-method="POST" ajax-url="{{ url_for('logout') }}">Logout</a>
+                </li>
+            {% else %}
+                <li role="presentation"><a href="{{ url_for('show_login') }}">Login or register</a> </li>
+            {% endif %}
+        </ul>
+        <h3 class="text-muted">SSL Security Analyzer</h3>
+    </nav>
+</div>

@@ -17,3 +17,12 @@ class FieldRequiredError:
     def json_dict(self):
         return {'fieldname': self.fieldname}
 
+
+def check_form(form, required_fields):
+    field_errors = list()
+    for required_field in required_fields:
+        # check if key exists and not empty string
+        if required_field not in form or not form[required_field]:
+            field_errors += [FieldRequiredError(required_field)]
+    if field_errors:
+        raise FormError(field_errors)

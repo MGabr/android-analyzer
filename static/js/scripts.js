@@ -35,5 +35,8 @@ $(document).ready(function(){
     $('#add-btn').click(ajaxButtonClick);
     $('#edit-btn').click(ajaxButtonClick);
     $('#delete-btn').click(ajaxButtonClick);
+    $('#login-btn').click(ajaxButtonClick);
+    $('#register-btn').click(ajaxButtonClick);
+    $('#logout-btn').click(ajaxButtonClick);
 });
 

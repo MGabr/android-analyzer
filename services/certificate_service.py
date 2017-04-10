@@ -1,14 +1,22 @@
 import os
 from models.certificate import Certificate
 from app import db
-from services.form_error import FormError, FieldRequiredError
+from services.form_error import check_form
 from definitions import CERTS_DIR
+from exists_error import ExistsError
+
+
+required_fields = ['name']
 
 
 def edit(id, form):
-    _check_form(form)
+    check_form(form, required_fields)
 
     certificate = Certificate.query.get(id)
+
+    if certificate.name != form['name']:
+        _check_name_exists(form)
+
     if certificate and not certificate.is_default:
         certificate.name = form['name']
         certificate.description=form.get('description')
@@ -64,7 +72,8 @@ def _replace_custom_ca(certificate, form):
 
 
 def add(form):
-    _check_form(form)
+    check_form(form, required_fields)
+    _check_name_exists(form)
 
     certificate = Certificate(
         name=form['name'],
@@ -113,6 +122,11 @@ def _custom_ca_name(id):
     return 'ca-{id}.pem'.format(id=id)
 
 
+def _check_name_exists(form):
+    if Certificate.query.filter(Certificate.name == form['name']).first():
+        raise ExistsError('Certificate', 'name')
+
+
 def delete(id):
     certificate = Certificate.query.get(id)
     if not certificate.is_default:
@@ -130,12 +144,3 @@ def delete(id):
 
         db.session.delete(certificate)
         db.session.commit()
-
-
-def _check_form(form):
-    # check if key exists and not empty string
-    if 'name' not in form or not form['name']:
-        field_errors = list()
-        field_errors += [FieldRequiredError('name')]
-        raise FormError(field_errors)
-    # TODO: name unique check

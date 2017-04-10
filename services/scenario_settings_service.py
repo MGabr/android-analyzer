@@ -2,11 +2,14 @@ from app import db
 from models.scenario_settings import ScenarioSettings
 from models.vuln_type import VulnType
 from models.certificate import Certificate
-from services.form_error import FieldRequiredError, FormError
+from services.form_error import check_form
+
+
+required_fields = ['vuln_type', 'mitm_certificate']
 
 
 def edit(id, form):
-    _check_form(form)
+    check_form(form, required_fields)
 
     scenario = ScenarioSettings.query.get(id)
     if not scenario.is_default:
@@ -25,7 +28,7 @@ def edit(id, form):
 
 
 def add(form):
-    _check_form(form)
+    check_form(form, required_fields)
 
     mitm_certificate, sys_certificates, user_certificates = _get_scenario_certificates(form)
 
@@ -50,16 +53,6 @@ def delete(id):
     if not scenario.is_default:
         db.session.delete(scenario)
         db.session.commit()
-
-
-def _check_form(form):
-    field_errors = list()
-    for required_field in ['vuln_type', 'mitm_certificate']:
-        # check if key exists and not empty string
-        if required_field not in form or not form[required_field]:
-            field_errors += [FieldRequiredError(required_field)]
-    if field_errors:
-        raise FormError(field_errors)
 
 
 def _get_scenario_certificates(form):

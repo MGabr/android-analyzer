@@ -1,17 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Login - SSL Security Analyzer for Android applications</title>
-</head>
+{% include "partials/head.html" %}
 <body>
-    <form method="post" action="{{ url_for('login') }}">
-        <label for="username-input">Username</label>
-        <input type="text" name="username" id="username-input">
-        <label for="password-input">Password</label>
-        <input type="password" name="password" id="password-input">
-        <input type="submit" value="Login" name="submit">
-    </form>
-    <p>Not registered? Register <a href="{{ url_for('show_register') }}">here</a>!</p>
+    <div class="container">
+        {% include "partials/header.html" %}
+        <h1>Login or register</h1>
+
+        <form name="form">
+            <label for="username">Username</label>
+            <input type="text" name="username" id="username">
+            <br />
+            <label for="password">Password</label>
+            <input type="password" name="password" id="password">
+        </form>
+
+        <button id="login-btn" class="btn btn-primary" ajax-form="form"
+                ajax-url="{{ url_for('login') }}" ajax-method="POST">Login</button>
+
+        <button id="register-btn" class="btn btn-default" ajax-form="form"
+                ajax-url="{{ url_for('register') }}" ajax-method="POST">Or register (with same data)</button>
+    </div>
 </body>
 </html>

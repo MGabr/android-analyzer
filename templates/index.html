@@ -2,41 +2,31 @@
 <html lang="en">
 {% include "partials/head.html" %}
 <body>
+    <div class="container">
+        {% include "partials/header.html" %}
+        <div class="jumbotron">
+            <h1><strong>SSL Security Analyzer</strong><br>for Android applications</h1>
+            <p>Analyze your Android application for common SSL Security bugs which might make them vulnerable for man-in-the-middle attacks.</p>
 
-<div class="container">
-    <div class="header clearfix">
-        <nav>
-            <ul class="nav nav-pills pull-right">
-                <li role="presentation" class="active"><a href="{{ url_for('show_index') }}">Analyze</a></li>
-                <li role="presentation"><a href="{{ url_for('show_settings') }}">Settings</a></li>
-            </ul>
-            <h3 class="text-muted">SSL Security Analyzer</h3>
-        </nav>
-    </div>
-    <div class="jumbotron">
-        <h1><strong>SSL Security Analyzer</strong><br>for Android applications</h1>
-        <p>Analyze your Android application for common SSL Security bugs which might make them vulnerable for man-in-the-middle attacks.</p>
-
-        <form method="post" enctype="multipart/form-data" action="{{ url_for('upload_apk') }}">
-            <label class="btn btn-lg btn-success btn-file" role="btn">
-                Upload and analyze APK file
-                <input type="file" name="apk" style="display: none;" onchange="this.form.submit()">
-            </label>
-        </form>
-    </div>
-
-    <div>
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-        <div class="flashes">
-            {% for message in messages %}
-                <div class="alert alert-danger" role="alert">{{ message }}</div>
-            {% endfor %}
+            <form method="post" enctype="multipart/form-data" action="{{ url_for('upload_apk') }}">
+                <label class="btn btn-lg btn-success btn-file" role="btn">
+                    Upload and analyze APK file
+                    <input type="file" name="apk" style="display: none;" onchange="this.form.submit()">
+                </label>
+            </form>
         </div>
-        {% endif %}
-        {% endwith %}
-    </div>
-</div>
 
+        <div>
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <div class="flashes">
+                {% for message in messages %}
+                    <div class="alert alert-danger" role="alert">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+        </div>
+    </div>
 </body>
 </html>
