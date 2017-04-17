@@ -1,25 +1,22 @@
-from flask import request, flash, render_template, url_for, jsonify, redirect
-import socket
 import os
-from app import app, db, apks
-from analysis.analysis import analyse
-from models.certificate import Certificate
-from models.scenario_settings import ScenarioSettings
-from models.vuln_type import VulnType
-from services import certificate_service
-from services import scenario_settings_service
-from models.default_settings import add_default_settings
-from services.form_error import FormError
-from services.login_error import LoginError
-from services.exists_error import ExistsError
-from flask_login import login_required
-from app import login_manager
-from services import user_service
+import socket
 from urlparse import urlparse, urljoin
 
+from flask import request, flash, render_template, url_for, jsonify
+from flask_login import login_required
+from services import certificate_service
+from services import scenario_settings_service
+from services.errors import FormError, LoginError, FieldExistsError, EntityNotExistsError
 
-# Don't remove this
-import context_processors
+from app import app, db, apks
+from app import login_manager
+from src.analysis.analysis import analyse
+from src.models.certificate import Certificate
+from src.models.scenario_settings import ScenarioSettings
+from src.models.vuln_type import VulnType
+from src.services import user_service
+from src.create_db import create_db, fill_db, drop_db
+from src.context_processors import context_processor
 
 
 # patch http://stackoverflow.com/a/25536820
@@ -36,6 +33,9 @@ login_manager.login_view = "show_login"
 @login_manager.user_loader
 def user_loader(user_id):
     return user_service.user_loader(user_id)
+
+
+app.context_processor(context_processor)
 
 
 # ---- Views ----
@@ -55,25 +55,25 @@ def show_login():
 @app.route('/settings', methods=['GET'])
 def show_settings():
     return render_template('settings.html',
-                           scenarios=ScenarioSettings.query.all(),
-                           certificates=Certificate.query.all())
+                           scenarios=scenario_settings_service.get_all_of_user(),
+                           certificates=certificate_service.get_all_of_user())
 
 
 @app.route('/scenario/<id>', methods=['GET'])
 def show_scenario(id):
     new = id == 'new'
-    sc = ScenarioSettings() if new else ScenarioSettings.query.get(id)
+    sc = ScenarioSettings() if new else scenario_settings_service.get_of_user(id)
     return render_template('scenario.html',
                            new=new,
                            sc=sc,
                            vuln_types=[v for v in VulnType],
-                           certs=Certificate.query.all())
+                           certs=certificate_service.get_all_of_user())
 
 
 @app.route('/certificate/<id>', methods=['GET'])
 def show_certificate(id):
     new = id == 'new'
-    c = Certificate() if new else Certificate.query.get(id)
+    c = Certificate() if new else certificate_service.get_of_user(id)
     return render_template('certificate.html', new=new, c=c)
 
 
@@ -177,14 +177,19 @@ def handle_login_error(error):
     return jsonify(error.json_dict()), 400
 
 
-@app.errorhandler(ExistsError)
-def handle_exists_error(error):
+@app.errorhandler(FieldExistsError)
+def handle_field_exists_error(error):
+    return jsonify(error.json_dict()), 400
+
+
+@app.errorhandler(EntityNotExistsError)
+def handle_entity_not_exists_error(error):
     return jsonify(error.json_dict()), 400
 
 
 if __name__ == '__main__':
     # flask default port is 5000, but adb also runs on 5000
-    db.create_all()
-    add_default_settings()
-    app.run(host='127.0.0.1', port=4009, threaded=True)
-    db.drop_all()
+    create_db()
+    fill_db()
+    app.run(host='127.0.0.1', port=4008, threaded=True)
+    drop_db()

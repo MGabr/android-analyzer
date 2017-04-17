@@ -1,9 +1,10 @@
-from apk_disassembly import disassemble_apk
-from static.static_analysis import StaticAnalyzer
-from dynamic.dynamic_analysis import analyze_dynamically
-from static.smart_input import generate_smart_input
-from log_analysis import analyse_logs
 import logging
+
+from dynamic.dynamic_analysis import analyze_dynamically
+from src.analysis.logs.log_analysis import analyse_logs
+from src.analysis.static.apk_disassembly import disassemble_apk
+from static.smart_input import generate_smart_input
+from static.static_analysis import StaticAnalyzer
 
 
 def analyse(apk_name):

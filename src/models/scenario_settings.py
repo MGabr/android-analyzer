@@ -1,7 +1,7 @@
-from vuln_type import VulnType
+from src.app import db
 from sys_certificates_table import sys_certificates_table
 from user_certificates_table import user_certificates_table
-from app import db
+from vuln_type import VulnType
 
 
 class ScenarioSettings(db.Model):
@@ -19,6 +19,8 @@ class ScenarioSettings(db.Model):
     info_message = db.Column(db.String(2048))
     is_default = db.Column(db.Boolean, default=True)
     enabled = db.Column(db.Boolean, default=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.username'))
+    user = db.relationship('User', back_populates='scenarios')
 
     def get_sys_certificates_ids(self):
         return [s.id for s in self.sys_certificates]

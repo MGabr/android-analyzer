@@ -1,11 +1,13 @@
-from app import db
+from src.app import db
 
 
 class User(db.Model):
     __tablename__ = 'users'
     username = db.Column(db.String, primary_key=True)
-    password = db.Column(db.String)
+    password = db.Column(db.LargeBinary)
     authenticated = db.Column(db.Boolean, default=False)
+    scenarios = db.relationship("ScenarioSettings", back_populates="user")
+    certificates = db.relationship('Certificate', back_populates="user")
 
     def is_active(self):
         return True

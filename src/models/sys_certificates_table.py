@@ -1,4 +1,4 @@
-from app import db
+from src.app import db
 
 sys_certificates_table = db.Table(
     'sys_certificates',

@@ -1,7 +1,3 @@
-from app import app
-
-
-@app.context_processor
 def context_processor():
 
     def display_comma_joined(set):

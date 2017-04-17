@@ -1,8 +1,8 @@
 import logging
-import subprocess
 import re
-from definitions import CERTS_DIR
+import subprocess
 
+from src.definitions import CERTS_DIR
 
 logger = logging.getLogger(__name__)
 

@@ -1,11 +1,12 @@
-from tests.app_test import AppTest
-from app import db
-from models.certificate import Certificate
-from services.certificate_service import edit, add, delete
-import unittest
-from definitions import CERTS_DIR
 import os
-from services.form_error import FormError
+import unittest
+
+from src.app import db
+from src.definitions import CERTS_DIR
+from src.models.certificate import Certificate
+from src.services.errors import FormError
+from src.services.certificate_service import edit, add, delete
+from tests.app_test import AppTest
 
 
 class CertificateServiceTest(AppTest):

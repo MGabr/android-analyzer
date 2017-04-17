@@ -1,6 +1,4 @@
-from analysis.static.static_analysis import StaticAnalysisResults
-import itertools
-import textwrap
+from src.analysis.static.static_analysis import StaticAnalysisResults
 
 
 class Settings:

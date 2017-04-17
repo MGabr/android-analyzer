@@ -1,11 +1,24 @@
-from certificate import Certificate
-from scenario_settings import ScenarioSettings
-from vuln_type import VulnType
-from app import db
 from textwrap import dedent
 
+from src.models.certificate import Certificate
+from src.models.scenario_settings import ScenarioSettings
+from src.app import db
+from src.models.vuln_type import VulnType
 
-def add_default_settings():
+
+def create_db():
+    db.create_all()
+
+
+def fill_db():
+    _add_default_settings()
+
+
+def drop_db():
+    db.drop_all()
+
+
+def _add_default_settings():
     mitmproxy_ca_signed = Certificate(
         name='Signed on-the-fly by unknown CA',
         description=dedent('''

@@ -1,10 +1,11 @@
 import os
-from models.certificate import Certificate
-from app import db
-from services.form_error import check_form
-from definitions import CERTS_DIR
-from exists_error import ExistsError
 
+from flask_login import current_user
+
+from src.app import db
+from src.definitions import CERTS_DIR
+from src.models.certificate import Certificate
+from src.services.errors import check_form, FieldExistsError, EntityNotExistsError
 
 required_fields = ['name']
 
@@ -76,6 +77,7 @@ def add(form):
     _check_name_exists(form)
 
     certificate = Certificate(
+        user=current_user,
         name=form['name'],
         description=form.get('description'),
         custom_cert_domain=form.get('custom_cert_domain'),
@@ -124,7 +126,7 @@ def _custom_ca_name(id):
 
 def _check_name_exists(form):
     if Certificate.query.filter(Certificate.name == form['name']).first():
-        raise ExistsError('Certificate', 'name')
+        raise FieldExistsError('Certificate', 'name')
 
 
 def delete(id):
@@ -144,3 +146,17 @@ def delete(id):
 
         db.session.delete(certificate)
         db.session.commit()
+
+
+def get_of_user(id):
+    certificate = Certificate.query.get(id)
+    if not certificate.is_default and not certificate.user == current_user:
+        raise EntityNotExistsError('Certificate', id)
+    return certificate
+
+
+def get_all_of_user():
+    default_certs = Certificate.query.filter(Certificate.is_default).all()
+    if current_user.is_anonymous:
+        return default_certs
+    return current_user.certificates + default_certs

@@ -1,16 +1,17 @@
-from analysis.environment import device_manager
-import subprocess
-import time
 import logging
 import re
-from com.dtmilano.android.viewclient import ViewClient
-from mitm_proxy import start_mitm_proxy, kill_mitm_proxy
-from models.smart_input_assignments import SmartInputAssignment
-from models.scenario_settings import ScenarioSettings
-from certificate_installation import install_as_system_certificate
-from models.settings import Settings
-from definitions import INPUT_APK_DIR, LOGS_DIR
+import subprocess
+import time
 
+from com.dtmilano.android.viewclient import ViewClient
+from src.models.settings import Settings
+from src.models.smart_input_assignments import SmartInputAssignment
+
+from src.analysis.environment import device_manager
+from src.analysis.environment.certificate_installation import install_as_system_certificate
+from src.analysis.environment.mitm_proxy import start_mitm_proxy, kill_mitm_proxy
+from src.definitions import INPUT_APK_DIR, LOGS_DIR
+from src.services.scenario_settings_service import get_all_enabled_of_user
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ def analyze_dynamically(apk_name, static_analysis_results, smart_input_results):
     dynamic_analysis_results = []
 
     emulator_id = device_manager.get_emulator()
-    apk_path =  INPUT_APK_DIR + apk_name + ".apk"
+    apk_path = INPUT_APK_DIR + apk_name + ".apk"
 
     install_apk(emulator_id, apk_path)
 
@@ -48,7 +49,7 @@ def analyze_dynamically(apk_name, static_analysis_results, smart_input_results):
     smart_input_assignment = SmartInputAssignment()
 
     log_id = 0
-    scenario_settings = ScenarioSettings.query.filter_by(enabled=True).all()
+    scenario_settings = get_all_enabled_of_user()
     scenarios, solved_scenarios = Settings(scenario_settings).get_scenarios(static_analysis_results)
     for scenario in scenarios:
         logger.debug("Checking for vulnerable " + scenario.scenario_settings.vuln_type.value + " implementations")

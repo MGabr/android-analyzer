@@ -1,6 +1,8 @@
-from app import app, db
-from models.default_settings import add_default_settings
 from flask_testing import TestCase
+
+from src.app import app, db
+from src.services.user_service import add
+from src.create_db import create_db, fill_db
 
 
 class AppTest(TestCase):
@@ -33,8 +35,12 @@ class AppTest(TestCase):
             cls.tearDown = tearDownOverride
 
     def setUp(self):
-        db.create_all()
-        add_default_settings()
+        create_db()
+        fill_db()
+        self._login_test_user()
+
+    def _login_test_user(self):
+        add({'username': 'test', 'password': 'password'})
 
     def tearDown(self):
         db.session.remove()

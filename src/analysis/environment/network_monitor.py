@@ -1,10 +1,11 @@
 # in top level directory, because of path problems with subprocess calls
 
-import subprocess32 as subprocess
 import logging
 import shlex
-from definitions import LOGS_DIR
 
+import subprocess32 as subprocess
+
+from src.definitions import LOGS_DIR
 
 logger = logging.getLogger(__name__)
 

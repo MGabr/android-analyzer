@@ -1,9 +1,10 @@
-from app import db
-from models.scenario_settings import ScenarioSettings
-from models.vuln_type import VulnType
-from models.certificate import Certificate
-from services.form_error import check_form
+from flask_login import current_user
 
+from src.app import db
+from src.models.certificate import Certificate
+from src.models.scenario_settings import ScenarioSettings
+from src.models.vuln_type import VulnType
+from src.services.errors import check_form, EntityNotExistsError
 
 required_fields = ['vuln_type', 'mitm_certificate']
 
@@ -33,6 +34,7 @@ def add(form):
     mitm_certificate, sys_certificates, user_certificates = _get_scenario_certificates(form)
 
     scenario = ScenarioSettings(
+        user=current_user,
         vuln_type=VulnType(form['vuln_type']),
         mitm_certificate=mitm_certificate,
         sys_certificates=sys_certificates,
@@ -53,6 +55,27 @@ def delete(id):
     if not scenario.is_default:
         db.session.delete(scenario)
         db.session.commit()
+
+
+def get_of_user(id):
+    scenario = ScenarioSettings.query.get(id)
+    if not scenario.is_default and not scenario.user == current_user:
+        raise EntityNotExistsError('ScenarioSettings', id)
+    return scenario
+
+
+def get_all_of_user():
+    default_scenarios = ScenarioSettings.query.filter(ScenarioSettings.is_default).all()
+    if current_user.is_anonymous:
+        return default_scenarios
+    return current_user.scenarios + default_scenarios
+
+
+def get_all_enabled_of_user():
+    default_scenarios = ScenarioSettings.query.filter(ScenarioSettings.is_default, ScenarioSettings.enabled).all()
+    if current_user.is_anonymous:
+        return default_scenarios
+    return [s for s in current_user.scenarios if s.enabled] + default_scenarios
 
 
 def _get_scenario_certificates(form):

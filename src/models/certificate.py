@@ -1,6 +1,6 @@
+from src.app import db
 from sys_certificates_table import sys_certificates_table
 from user_certificates_table import user_certificates_table
-from app import db
 
 
 class Certificate(db.Model):
@@ -12,6 +12,8 @@ class Certificate(db.Model):
     custom_cert = db.Column(db.String(4096))
     custom_cert_domain = db.Column(db.String(128))
     custom_ca = db.Column(db.String(4096))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.username'))
+    user = db.relationship('User')
 
     scenario_settings_as_sys = db.relationship('ScenarioSettings',
                                             secondary=sys_certificates_table,

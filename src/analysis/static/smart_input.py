@@ -1,12 +1,13 @@
+import logging
+import re
+from xml.dom import minidom
+
 from androguard.core.analysis.analysis import VMAnalysis
 from androguard.core.analysis.ganalysis import GVMAnalysis
 from androguard.core.bytecodes.apk import APK, AXMLPrinter
 from androguard.core.bytecodes.dvm import DalvikVMFormat
-from xml.dom import minidom
-import re
-import logging
-from definitions import INPUT_APK_DIR
 
+from src.definitions import INPUT_APK_DIR
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
