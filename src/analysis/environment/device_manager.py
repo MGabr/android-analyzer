@@ -19,7 +19,7 @@ def get_emulator():
     emulator_type = "Nexus_5_API_24"
     port = "5554"
     other_opts = "-wipe-data -use-system-libs -writable-system -http-proxy http://localhost:8080"
-    cmd = no_audio + "~/Android/Sdk/tools/emulator -avd " + emulator_type + " -port " + port + " " + other_opts + "  &"
+    cmd = no_audio + "emulator -avd " + emulator_type + " -port " + port + " " + other_opts + "  &"
     logger.debug(cmd)
     subprocess.check_call(cmd, shell=True)
     emulator_id = "emulator-" + port
