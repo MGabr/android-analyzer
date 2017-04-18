@@ -191,5 +191,5 @@ if __name__ == '__main__':
     # flask default port is 5000, but adb also runs on 5000
     create_db()
     fill_db()
-    app.run(host='127.0.0.1', port=4008, threaded=True)
+    app.run(host='0.0.0.0', port=4008, threaded=True)
     drop_db()
