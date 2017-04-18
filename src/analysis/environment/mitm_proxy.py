@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def start_mitm_proxy(certificate, log_id):
-    cmd = "mitmproxy -w {logs_dir}mitm_proxy_log{log_id} --port 8080".format(logs_dir=LOGS_DIR, log_id=log_id)
+    cmd = "mitmdump -w {logs_dir}mitm_proxy_log{log_id} --port 8080".format(logs_dir=LOGS_DIR, log_id=log_id)
     if certificate.custom_ca:
         prev_cmd = "cp {certs_dir}{custom_ca} {certs_dir}/mitmproxy-ca.pem".format(
             certs_dir=CERTS_DIR,
