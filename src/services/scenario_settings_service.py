@@ -10,10 +10,12 @@ required_fields = ['vuln_type', 'mitm_certificate']
 
 
 def edit(id, form):
-    check_form(form, required_fields)
-
     scenario = ScenarioSettings.query.get(id)
+    scenario.enabled = 'enabled' in form
+
     if not scenario.is_default:
+        check_form(form, required_fields)
+
         mitm_certificate, sys_certificates, user_certificates = _get_scenario_certificates(form)
 
         scenario.vuln_type = VulnType(form['vuln_type'])
@@ -21,9 +23,8 @@ def edit(id, form):
         scenario.sys_certificates = sys_certificates
         scenario.user_certificates = user_certificates
         scenario.info_message = form.get('info_message')
-        scenario.enabled='enabled' in form
 
-        db.session.commit()
+    db.session.commit()
 
     return scenario
 
