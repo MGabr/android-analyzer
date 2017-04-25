@@ -1,6 +1,7 @@
 from src.app import db
 from sys_certificates_table import sys_certificates_table
 from user_certificates_table import user_certificates_table
+from src.definitions import CERTS_DIR
 
 
 class Certificate(db.Model):
@@ -21,3 +22,11 @@ class Certificate(db.Model):
     scenario_settings_as_user = db.relationship('ScenarioSettings',
                                              secondary=user_certificates_table,
                                              back_populates='user_certificates')
+
+    def custom_cert_content(self):
+        with open(CERTS_DIR + self.custom_cert) as content:
+            return content.read()
+
+    def custom_ca_content(self):
+        with open(CERTS_DIR + self.custom_ca) as content:
+            return content.read()

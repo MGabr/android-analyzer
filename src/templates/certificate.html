@@ -24,7 +24,7 @@
         <label for="custom_cert">Custom certificate</label>
         <textarea class="form-control" id="custom_cert" name="custom_cert" rows="5"
                   placeholder="Enter an optional custom certificate to be used"
-                  {% if c.is_default %}disabled{% endif %}>{{ c.custom_cert if c.custom_cert != None }}</textarea>
+                  {% if c.is_default %}disabled{% endif %}>{{ c.custom_cert_content() if c.custom_cert != None }}</textarea>
 
         <label for="custom_cert_domain">Custom certificate domain</label>
         <input type="text" class="form-control" id="custom_cert_domain" name="custom_cert_domain"
@@ -35,7 +35,7 @@
         <label for="custom_ca">Custom certificate authority</label>
         <textarea class="form-control" id="custom_ca" name="custom_ca" rows="5"
                   placeholder="Enter an optional custom certificate authority to be used"
-                  {% if c.is_default %}disabled{% endif %}>{{ c.custom_ca if c.custom_ca != None }}</textarea>
+                  {% if c.is_default %}disabled{% endif %}>{{ c.custom_ca_content() if c.custom_ca != None }}</textarea>
     </form>
 
     {% if new %}
