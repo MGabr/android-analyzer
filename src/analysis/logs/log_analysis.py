@@ -52,7 +52,7 @@ def analyse_log(dynamic_analysis_result):
     # network = open(dynamic_analysis_result.get_network_monitor_log(), "r")
 
     ssl_regex = r"ssl_established;4:true"
-    between_ssl_ip_regex = r"(?!ssl_established).*address;[0-9]{1,2}:[0-9]{1,2}:address;[0-9]{1,2}:[0-9]{1,2}:"
+    between_ssl_ip_regex = r"(?!ssl_established).*ip_address;[0-9]{1,2}:[0-9]{1,2}:address;[0-9]{1,2}:[0-9]{1,2}:"
     ip_regex = r"([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})"
     get_ip_regex = ssl_regex + between_ssl_ip_regex + ip_regex
 
