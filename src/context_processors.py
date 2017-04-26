@@ -62,14 +62,13 @@ def context_processor():
             Vulnerabilities due to custom implementations of this class can be ruled out.
             '''.format(clazz=_vulntype_for_result(lar))
 
-    def _display_connected_ips_hostnames(lar):
-        return display_br_joined(
-            [display_comma_joined(lar.connected_hostnames_ips[hostname]) + " (" + hostname + ")"
-             for hostname in lar.connected_hostnames_ips])
+    def _display_connected_hostnames(lar):
+        return display_br_joined(lar.connected_hosts or [])
 
     def connected_hostnames_for_result(lar):
-        return display_nl_joined(
-            lar.connected_hostnames_ips.keys()) or ""
+        print("connected_hosts")
+        print(lar.connected_hosts)
+        return display_nl_joined(lar.connected_hosts or []) or ""
 
     def connected_hostnames_tooltiptitle_for_result(lar):
         if lar.is_vulnerable():
@@ -86,15 +85,15 @@ def context_processor():
             return '''
             The app is vulnerable to a Man-in-the-Middle attack.<br />
             Requests to the following IPs/hostnames could be intercepted:<br />
-            {ip_hns}
-            '''.format(ip_hns=_display_connected_ips_hostnames(lar))
+            {hns}
+            '''.format(hns=_display_connected_hostnames(lar))
         elif lar.is_statically_vulnerable():
             return '''
             Dynamic analysis could not show that the app is vulnerable to a Man-in-the-Middle attack.<br />
             No requests could be successfully intercepted.<br />
-            Note that the custom implementation of the {ip_hns} class might still not be secure.
+            Note that the custom implementation of the {clazz} class might still not be secure.
             <br />
-            '''.format(ip_hns=_display_connected_ips_hostnames(lar))
+            '''.format(clazz=_vulntype_for_result(lar))
         elif lar.dynamic_analysis_result.has_been_run():
             return '''
             Dynamic analysis could not show that the app is vulnerable to a Man-in-the-Middle attack.<br />

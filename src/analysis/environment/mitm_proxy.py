@@ -3,13 +3,16 @@ import shlex
 
 import subprocess32 as subprocess
 
-from src.definitions import LOGS_DIR, CERTS_DIR
+from src.definitions import LOGS_DIR, CERTS_DIR, SCRIPTS_DIR
 
 logger = logging.getLogger(__name__)
 
 
-def start_mitm_proxy(certificate, log_id):
-    cmd = "mitmdump -w {logs_dir}mitm_proxy_log{log_id} --port 8080".format(logs_dir=LOGS_DIR, log_id=log_id)
+def start_mitm_proxy(certificate, add_upstream_certs, log_id):
+    cmd = "mitmdump -dd -s '{scripts_dir}log.py {logs_dir}mitm_proxy_log{log_id}' --port 8080".format(
+        scripts_dir=SCRIPTS_DIR,
+        logs_dir=LOGS_DIR,
+        log_id=log_id)
     if certificate.custom_ca:
         prev_cmd = "cp {certs_dir}{custom_ca} {certs_dir}/mitmproxy-ca.pem".format(
             certs_dir=CERTS_DIR,
@@ -26,6 +29,8 @@ def start_mitm_proxy(certificate, log_id):
                 custom_cert=certificate.custom_cert)
         else:
             cmd += " --cert *=" + CERTS_DIR + certificate.custom_cert
+    if add_upstream_certs:
+        cmd += " --add-upstream-certs-to-client-chain --insecure"
 
     logger.debug(cmd)
     process = subprocess.Popen(shlex.split(cmd))

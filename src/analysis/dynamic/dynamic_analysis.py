@@ -38,12 +38,15 @@ class DynamicAnalysisResult:
 def analyze_dynamically(apk_name, static_analysis_results, smart_input_results):
     dynamic_analysis_results = []
 
+    # ==== Setup ====
     emulator_id = device_manager.get_emulator()
     apk_path = INPUT_APK_DIR + apk_name + ".apk"
 
     install_apk(emulator_id, apk_path)
 
     start_app(emulator_id, static_analysis_results.package)
+    # ==== ===== ====
+
     time.sleep(1)
 
     smart_input_assignment = SmartInputAssignment()
@@ -51,83 +54,126 @@ def analyze_dynamically(apk_name, static_analysis_results, smart_input_results):
     log_id = 0
     scenario_settings = get_all_enabled_of_user()
     scenarios, solved_scenarios = Settings(scenario_settings).get_scenarios(static_analysis_results)
+
     for scenario in scenarios:
-        logger.debug("Checking for vulnerable " + scenario.scenario_settings.vuln_type.value + " implementations")
-
         log_id += 1
-        mitm_proxy_process = start_mitm_proxy(scenario.scenario_settings.mitm_certificate, log_id)
-        # network_monitor_process = start_network_monitor(emulator_id, static_analysis_results.package, log_id)
+        dynamic_analysis_results += run_scenario(
+            scenario,
+            log_id,
+            emulator_id,
+            smart_input_results,
+            smart_input_assignment)
 
-        if scenario.scenario_settings.sys_certificates:
-            for sys_certificate in scenario.scenario_settings.sys_certificates:
-                install_as_system_certificate(emulator_id, sys_certificate)
-
-        # reset the window, press enter two times
-        press_enter(emulator_id)
-        press_enter(emulator_id)
-
-        smart_input_for_activity = smart_input_results[scenario.activity_name]
-
-        # TODO: also support services?
-        start_activity(emulator_id, scenario.activity_name)
-        time.sleep(5)
-
-        device, serialno = ViewClient.connectToDeviceOrExit(serialno=emulator_id)
-        logger.debug("Connected to device with serialno %s" % emulator_id)
-        vc = ViewClient(device, serialno)
-        logger.debug("Created ViewClient for serialno %s" % serialno)
-
-        editTexts = vc.findViewsWithAttribute("class", "android.widget.EditText")
-        logger.debug("editable %s" % str(editTexts))
-        clickableViews = vc.findViewsWithAttribute("clickable", "true")
-        logger.debug("clickable %s" % str(clickableViews))
-        listviews = vc.findViewsWithAttribute("class", "android.widget.ListView")
-        logger.debug("listview %s" % str(listviews))
-
-        # fill all EditText with smart input
-        for editText in editTexts:
-            smart_input = get_smart_input_for_edittext(
-                editText.getId(),
-                smart_input_for_activity,
-                smart_input_assignment)
-            logger.debug("smart_input: " + str(smart_input))
-            editText.touch()
-            editText.setText(smart_input)
-            logger.debug("edit text: %s" % editText.getText())
-            if vc.isKeyboardShown():
-                press_back(emulator_id)
-
-        for clickableView in clickableViews:
-            oldWindow = device.getFocusedWindowName()
-            clickableView.touch()
-            time.sleep(2)
-            if vc.isKeyboardShown():
-                press_back(emulator_id)
-            newWindow = device.getFocusedWindowName()
-            if newWindow != oldWindow:
-                logger.debug("Focused window changed while clicking view. Pressing back button.")
-                press_back(emulator_id)
-                time.sleep(5)
-                newWindow = device.getFocusedWindowName()
-                if newWindow != oldWindow:
-                    logger.debug("Did not return to old focused window after pressing back button. Trying enter.")
-                    press_enter(emulator_id)
-                    press_enter(emulator_id)
-                    if newWindow != oldWindow:
-                        logger.debug("Did not return to old focused window after pressing enter.")
-                        break
-        # TODO: listviews
-
-        # kill_network_monitor(network_monitor_process)
-        kill_mitm_proxy(mitm_proxy_process)
-
-        dynamic_analysis_results += [DynamicAnalysisResult(scenario, log_id)]
-
+    # ==== Shutdown ====
     uninstall_apk(emulator_id, static_analysis_results.package)
+    # ==== ======== ====
 
     dynamic_analysis_results += [DynamicAnalysisResult(solved_scenario) for solved_scenario in solved_scenarios]
 
     return dynamic_analysis_results
+
+
+def run_scenario(scenario, log_id, emulator_id, smart_input_results, smart_input_assignment):
+    logger.debug("Checking for vulnerable " + scenario.scenario_settings.vuln_type.value + " implementations")
+
+    # ==== Setup ====
+    if scenario.scenario_settings.sys_certificates:
+        for sys_certificate in scenario.scenario_settings.sys_certificates:
+            install_as_system_certificate(emulator_id, sys_certificate)
+
+    mitm_proxy_process = start_mitm_proxy(
+        scenario.scenario_settings.mitm_certificate,
+        scenario.scenario_settings.add_upstream_certs,
+        log_id)
+
+    # network_monitor_process = start_network_monitor(emulator_id, static_analysis_results.package, log_id)
+    # ==== ===== ====
+
+    run_ui_traversal(scenario, emulator_id, smart_input_results, smart_input_assignment)
+
+    time.sleep(5)  # wait before shutting down mitmproxy since there might be a last request caused by ui traversal
+
+    # ==== Shutdown ====
+    # kill_network_monitor(network_monitor_process)
+    kill_mitm_proxy(mitm_proxy_process)
+    # ==== ======== ====
+
+    return [DynamicAnalysisResult(scenario, log_id)]
+
+
+def run_ui_traversal(scenario, emulator_id, smart_input_results, smart_input_assignment):
+    smart_input_for_activity = smart_input_results[scenario.activity_name]
+
+    # reset the window, press enter two times
+    press_enter(emulator_id)
+    press_enter(emulator_id)
+
+    start_activity(emulator_id, scenario.activity_name)
+
+    time.sleep(5)  # wait for starting activity
+
+    device, serialno = ViewClient.connectToDeviceOrExit(serialno=emulator_id)
+    vc = ViewClient(device, serialno)
+
+    edittexts = vc.findViewsWithAttribute("class", "android.widget.EditText")
+    logger.info("EditText views: %s" % str(edittexts))
+    clickable_views = vc.findViewsWithAttribute("clickable", "true")
+    logger.info("Clickable views: %s" % str(clickable_views))
+    listviews = vc.findViewsWithAttribute("class", "android.widget.ListView")
+    logger.info("ListViews: %s" % str(listviews))
+
+    fill_edit_texts(edittexts, smart_input_for_activity, smart_input_assignment, vc, emulator_id)
+
+    click_clickable_views(clickable_views, vc, device, emulator_id)
+
+    # TODO: listviews
+
+
+def fill_edit_texts(edittexts, smart_input_for_activity, smart_input_assignment, vc, emulator_id):
+    for edittext in edittexts:
+        fill_edit_text(edittext, smart_input_for_activity, smart_input_assignment, vc, emulator_id)
+
+
+def fill_edit_text(edittext, smart_input_for_activity, smart_input_assignment, vc, emulator_id):
+    smart_input = get_smart_input_for_edittext(
+        edittext.getId(),
+        smart_input_for_activity,
+        smart_input_assignment)
+    logger.info("Smart input for EditText: " + smart_input + ", " + repr(edittext))
+    edittext.touch()
+    edittext.setText(smart_input)
+    if vc.isKeyboardShown():
+        press_back(emulator_id)
+
+
+def click_clickable_views(clickable_views, vc, device, emulator_id):
+    clickable_views_wo_edittexts = [c for c in clickable_views if c.getClass() != 'android.widget.EditText']
+    for clickable_view in clickable_views_wo_edittexts:
+        old_window = device.getFocusedWindowName()
+
+        logger.info("Clicking on view: " + repr(clickable_view))
+        clickable_view.touch()
+
+        time.sleep(2)
+
+        if vc.isKeyboardShown():
+            press_back(emulator_id)
+
+        new_window = device.getFocusedWindowName()
+        if new_window != old_window:
+            logger.warn("Focused window changed while clicking view. Pressing back button.")
+            press_back(emulator_id)
+
+            time.sleep(5)
+
+            new_window = device.getFocusedWindowName()
+            if new_window != old_window:
+                logger.warn("Did not return to old focused window after pressing back button. Trying enter.")
+                press_enter(emulator_id)
+                press_enter(emulator_id)
+                if new_window != old_window:
+                    logger.warn("Did not return to old focused window after pressing enter.")
+                    break
 
 
 def install_apk(emulator_id, apk_path):
