@@ -29,7 +29,6 @@ RUN yes | sdkmanager "add-ons;addon-google_apis-google-24"
 # * python 2 (for app) and 3 (for mitmproxy)
 # * dependencies for androguard and mitmproxy
 # * dependencies to display emulator gui
-# RUN dpkg --add-architecture i386
 RUN apt-get update && apt-get install -y \
 	python-pip python3-pip \
 	libssl-dev libffi-dev libxml2-dev libxslt1-dev libjpeg8-dev zlib1g-dev g++
@@ -48,7 +47,7 @@ RUN pip2 install --upgrade pip && pip2 install \
 	git+https://github.com/MGabr/AndroidViewClient.git
 
 # Downloading and installing mitmproxy
-RUN pip3 install --upgrade pip && pip3 install mitmproxy
+RUN pip2 install --upgrade pip && pip2 install mitmproxy==0.18.2
 
 # Create avd required for current server version
 RUN echo "no" | avdmanager create avd --name Nexus_5_API_24 --package "system-images;android-24;google_apis;x86_64" --tag google_apis

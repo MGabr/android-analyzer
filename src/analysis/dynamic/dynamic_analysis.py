@@ -102,7 +102,7 @@ def run_scenario(scenario, log_id, emulator_id, smart_input_results, smart_input
 
 
 def run_ui_traversal(scenario, emulator_id, smart_input_results, smart_input_assignment):
-    smart_input_for_activity = smart_input_results[scenario.activity_name]
+    smart_input_for_activity = smart_input_results.get(scenario.activity_name)
 
     # reset the window, press enter two times
     press_enter(emulator_id)
