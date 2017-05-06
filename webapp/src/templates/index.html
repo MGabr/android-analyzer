@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+{% include "partials/head.html" %}
+<body>
+    <div class="container">
+        {% include "partials/header.html" %}
+        <div class="jumbotron">
+            <h1><strong>SSL Security Analyzer</strong><br>for Android applications</h1>
+            <p>Analyze your Android application for common SSL Security bugs which might make them vulnerable for man-in-the-middle attacks.</p>
+
+            <form id="analysis-form" enctype="multipart/form-data">
+                <label class="btn btn-lg btn-success btn-file" role="btn">
+                    Upload and analyze APK file
+                    <input id="analysis-btn" type="file" name="apk" style="display: none;"
+                           ajax-form="analysis-form" ajax-method="POST" ajax-url="{{ url_for('start_static_analysis') }}">
+                </label>
+            </form>
+        </div>
+
+        <div>
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <div class="flashes">
+                {% for message in messages %}
+                    <div class="alert alert-danger" role="alert">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+</body>
+</html>

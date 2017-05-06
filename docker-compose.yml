@@ -1,0 +1,71 @@
+version: '2'
+services:
+  rabbit:
+    hostname: rabbit
+    image: rabbitmq:management
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=mypass
+    expose:
+      - "5672"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  dynamic_analysis:
+    build:
+      context: dynamic_analysis
+      dockerfile: Dockerfile
+    links:
+      - rabbit
+    depends_on:
+      - rabbit
+      - files
+    volumes:
+      - files:/files
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    devices:
+      - /dev/kvm
+    cap_add:
+      - NET_ADMIN
+    tty: true
+    environment:
+      - DISPLAY=$DISPLAY
+      - XAUTHORITY=$XAUTHORITY
+      - QT_XKB_CONFIG_ROOT=/usr/share/X11/xkb
+
+  static_analysis:
+    build:
+      context: static_analysis
+      dockerfile: Dockerfile
+    links:
+      - rabbit
+    depends_on:
+      - rabbit
+      - files
+    volumes:
+      - files:/files
+
+  webapp:
+    build:
+      context: webapp
+      dockerfile: Dockerfile
+    links:
+      - rabbit
+    depends_on:
+      - rabbit
+      - files
+    ports:
+      - "5000:5000"
+    volumes:
+      - files:/files
+
+  files:
+    build:
+      context: files
+      dockerfile: Dockerfile
+    volumes:
+      - files:/files
+
+volumes:
+  files:
