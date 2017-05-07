@@ -1,9 +1,10 @@
+import logging
+
 from celery import Celery
 
+from src.dict_object import DictObject
 from src.dynamic.dynamic_analysis import analyze_dynamically
 from src.logs.log_analysis import analyse_logs
-from src.dict_object import DictObject
-import logging
 
 
 logging.basicConfig(level=logging.DEBUG)

@@ -1,10 +1,10 @@
+from celery import Celery
 from flask import Flask
+from flask_login.login_manager import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from flask_uploads import UploadSet, configure_uploads
-from src.definitions import INPUT_APK_DIR
-from flask_login.login_manager import LoginManager
-from celery import Celery
 
+from src.definitions import INPUT_APK_DIR
 
 app = Flask(__name__)
 

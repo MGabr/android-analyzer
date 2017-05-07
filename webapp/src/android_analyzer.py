@@ -4,19 +4,20 @@ from urlparse import urlparse, urljoin
 
 from flask import request, render_template, url_for, jsonify
 from flask_login import login_required
+
+from src.app import app, apks, login_manager, make_celery
 from src.context_processors import context_processor
 from src.create_db import create_db, fill_db, drop_db
+from src.dict_object import DictObject
 from src.models.certificate import Certificate
 from src.models.scenario_settings import ScenarioSettings
-from src.models.vuln_type import VulnType
-from src.services import user_service
 from src.models.smart_input_assignments import SmartInputAssignment
-from src.app import app, apks, login_manager, make_celery
+from src.models.vuln_type import VulnType
 from src.services import certificate_service
-from src.services import scenario_settings_service
-from src.services.errors import FormError, LoginError, FieldExistsError, EntityNotExistsError
 from src.services import scenario_service
-from src.dict_object import DictObject
+from src.services import scenario_settings_service
+from src.services import user_service
+from src.services.errors import FormError, LoginError, FieldExistsError, EntityNotExistsError
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

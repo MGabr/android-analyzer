@@ -1,9 +1,10 @@
-from celery import Celery
-from src.static.smart_input import generate_smart_input
-from src.static.static_analysis import StaticAnalyzer
-from src.static.apk_disassembly import disassemble_apk
 import logging
 
+from celery import Celery
+
+from src.static.apk_disassembly import disassemble_apk
+from src.static.smart_input import generate_smart_input
+from src.static.static_analysis import StaticAnalyzer
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

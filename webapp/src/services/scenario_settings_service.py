@@ -1,9 +1,10 @@
 from flask_login import current_user
+
 from src.app import db
-from src.services.errors import check_form, EntityNotExistsError
 from src.models.certificate import Certificate
 from src.models.scenario_settings import ScenarioSettings
 from src.models.vuln_type import VulnType
+from src.services.errors import check_form, EntityNotExistsError
 
 required_fields = ['vuln_type', 'mitm_certificate']
 

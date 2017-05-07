@@ -1,7 +1,6 @@
 from textwrap import dedent
 
 from src.app import db
-
 from src.models.certificate import Certificate
 from src.models.scenario_settings import ScenarioSettings
 from src.models.vuln_type import VulnType

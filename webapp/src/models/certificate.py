@@ -1,7 +1,7 @@
+from src.app import db
 from src.definitions import CERTS_DIR
 from src.models.sys_certificates_table import sys_certificates_table
 from src.models.user_certificates_table import user_certificates_table
-from src.app import db
 
 
 class Certificate(db.Model):

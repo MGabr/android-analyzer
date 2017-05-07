@@ -1,8 +1,9 @@
 import bcrypt
 from flask_login import login_user, current_user, logout_user
+
 from src.app import db
-from src.services.errors import LoginError, FieldExistsError, check_form
 from src.models.user import User
+from src.services.errors import LoginError, FieldExistsError, check_form
 
 required_fields = ['username', 'password']
 

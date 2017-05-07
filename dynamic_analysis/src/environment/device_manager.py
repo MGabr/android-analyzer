@@ -1,8 +1,7 @@
-import subprocess
-import time
 import logging
 import os
-
+import subprocess
+import time
 
 logger = logging.getLogger(__name__)
 

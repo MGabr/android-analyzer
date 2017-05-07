@@ -4,10 +4,11 @@ import subprocess
 import time
 
 from com.dtmilano.android.viewclient import ViewClient
-from src.environment import device_manager
-from src.environment.mitm_proxy import start_mitm_proxy, kill_mitm_proxy
+
 from src.definitions import INPUT_APK_DIR, LOGS_DIR
+from src.environment import device_manager
 from src.environment.certificate_installation import install_as_system_certificate, uninstall_system_certificate
+from src.environment.mitm_proxy import start_mitm_proxy, kill_mitm_proxy
 
 logger = logging.getLogger(__name__)
 
