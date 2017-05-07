@@ -80,8 +80,6 @@ def show_result():
     id = request.args.get('dynamic_analysis_id')
     task = celery.AsyncResult(id)
 
-    logger.info(task.result)
-
     r = DictObject(task.result)
     return render_template('result.html', log_analysis_results=r.log_analysis_results)
 
@@ -104,9 +102,6 @@ def start_static_analysis():
 def get_static_analysis(id):
     task = celery.AsyncResult(id)
 
-    logger.info(task.result)
-    logger.info(task.state)
-
     if task.state == 'SUCCESS':
         task.result['dynamic_analysis_url'] = url_for('start_dynamic_analysis', static_analysis_id=task.id)
 
@@ -124,6 +119,7 @@ def start_dynamic_analysis():
     task = celery.AsyncResult(id)
     r = DictObject(task.result)
 
+    # TODO: parallelize
     scenarios = scenario_service.get_all_of_user(r.static_analysis_results)
 
     apk_name = scenarios.scenarios[0].static_analysis_results.result_list[0].apk_folder.split("/")[-1]

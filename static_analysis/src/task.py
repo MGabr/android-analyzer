@@ -15,8 +15,6 @@ celery.conf.update()
 
 @celery.task(bind=True, name='static_analysis_task')
 def static_analysis_task(self, apk_name):
-    logger.info("beginning of static_analysis_task")
-
     self.update_state(state='PROGRESS', meta={'msg_currently': 'Disassembling APK.'})
 
     disassembled_path = disassemble_apk(apk_name)

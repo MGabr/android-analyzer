@@ -7,9 +7,6 @@ from src.definitions import CERTS_DIR
 logger = logging.getLogger(__name__)
 
 
-# TODO: implement user installed certificate
-# TODO: deinstall
-
 def install_as_system_certificate(emulator_id, cert):
     cert_filename = CERTS_DIR + cert.custom_ca
 
@@ -19,7 +16,7 @@ def install_as_system_certificate(emulator_id, cert):
             new_filename = cert_filename.replace(".pem", ".crt")
             cmd = "openssl x509 -inform pem -in " + cert_filename + " -out " + new_filename
             logger.debug(cmd)
-            subprocess.call(cmd, shell=True)
+            subprocess.check_call(cmd, shell=True)
             cert_filename = new_filename
 
     cmd = "openssl x509 -in " + cert_filename + " -subject_hash_old -noout"
@@ -30,27 +27,38 @@ def install_as_system_certificate(emulator_id, cert):
 
     cmd = "openssl x509 -in " + cert_filename + " >> " + sys_cert_filename
     logger.debug(cmd)
-    subprocess.call(cmd, shell=True)
+    subprocess.check_call(cmd, shell=True)
 
     cmd = "openssl x509 -in " + cert_filename + " -text -fingerprint -noout >> " + sys_cert_filename
     logger.debug(cmd)
-    subprocess.call(cmd, shell=True)
+    subprocess.check_call(cmd, shell=True)
 
     cmd = "adb -s " + emulator_id + " root"
     logger.debug(cmd)
-    subprocess.call(cmd, shell=True)
+    subprocess.check_call(cmd, shell=True)
 
     cmd = "adb -s " + emulator_id + " remount"
     logger.debug(cmd)
-    subprocess.call(cmd, shell=True)
+    subprocess.check_call(cmd, shell=True)
 
     cmd = "adb -s " + emulator_id + " push " + sys_cert_filename + " /system/etc/security/cacerts"
     logger.debug(cmd)
-    subprocess.call(cmd, shell=True)
+    subprocess.check_call(cmd, shell=True)
 
     cmd = "rm -f " + sys_cert_filename
     logger.debug(cmd)
-    subprocess.call(cmd, shell=True)
+    subprocess.check_call(cmd, shell=True)
+
+    return sys_cert_filename
+
+
+def uninstall_system_certificate(emulator_id, sys_cert_filename):
+    try:
+        cmd = "adb -s " + emulator_id + " shell rm /system/etc/security/cacerts/" + sys_cert_filename
+        logger.debug(cmd)
+        subprocess.check_call(cmd, shell=True)
+    except Exception as e:
+        logger.exception("Could not uninstall system certificate")
 
 
 def install_as_user_certificate(p12_filename):

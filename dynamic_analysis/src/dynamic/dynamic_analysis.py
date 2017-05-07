@@ -7,16 +7,18 @@ from com.dtmilano.android.viewclient import ViewClient
 from src.environment import device_manager
 from src.environment.mitm_proxy import start_mitm_proxy, kill_mitm_proxy
 from src.definitions import INPUT_APK_DIR, LOGS_DIR
-from src.environment.certificate_installation import install_as_system_certificate
+from src.environment.certificate_installation import install_as_system_certificate, uninstall_system_certificate
 
 logger = logging.getLogger(__name__)
 
 
 class DynamicAnalysisResult:
     # if no dynamic analysis was run, log_id should not be set
-    def __init__(self, scenario, log_id=None):
+    def __init__(self, scenario, log_id=None, crashed_on_run=False, crashed_on_setup=False):
         self.scenario = scenario
         self.log_id = log_id
+        self.crashed_on_run = crashed_on_run
+        self.crashed_on_setup = crashed_on_setup
 
         self.is_statically_vulnerable = self.scenario.is_statically_vulnerable
         self.has_been_run = bool(self.log_id)
@@ -31,48 +33,53 @@ class DynamicAnalysisResult:
         return {
             'scenario': self.scenario,
             'log_id': self.log_id,
+            'crashed_on_run': self.crashed_on_run,
+            'crashed_on_setup': self.crashed_on_setup,
             'is_statically_vulnerable': self.is_statically_vulnerable,
             'has_been_run': self.has_been_run}
 
 
 def analyze_dynamically(apk_name, scenarios, smart_input_results, smart_input_assignment, task=None):
-    dynamic_analysis_results = []
+    common_static_analysis_results = scenarios.scenarios[0].static_analysis_results
 
     set_task_progress__setup(task)
 
-    # ==== Setup ====
-    emulator_id = device_manager.get_emulator()
+    emulator_id = None
     apk_path = INPUT_APK_DIR + apk_name + ".apk"
+    installed = False
+    try:
+        # ==== Setup ====
+        emulator_id = device_manager.get_emulator(
+            common_static_analysis_results.min_sdk_version,
+            common_static_analysis_results.target_sdk_version)
 
-    install_apk(emulator_id, apk_path)
+        install_apk(emulator_id, apk_path)
+        installed = True
 
-    start_app(emulator_id, scenarios.scenarios[0].static_analysis_results.package)
-    # ==== ===== ====
+        start_app(emulator_id, common_static_analysis_results.package)
+        # ==== ===== ====
 
-    time.sleep(1)
+        time.sleep(1)
 
-    log_id = 0
-    last_scenario = None
-    for scenario in scenarios.scenarios:
-        set_task_progress__scenarios(task, last_scenario, scenario)
-
-        log_id += 1
-        dynamic_analysis_results += run_scenario(
-            scenario,
-            log_id,
-            emulator_id,
+        dynamic_analysis_results = run_scenarios(
+            scenarios,
             smart_input_results,
-            smart_input_assignment)
+            smart_input_assignment,
+            emulator_id,
+            task)
+    except Exception as e:
+        logger.exception("Crash during setup")
+        dynamic_analysis_results = [DynamicAnalysisResult(s, crashed_on_setup=True) for s in scenarios.scenarios]
+    finally:
+        # ==== Shutdown ====
+        if installed:
+            uninstall_apk(emulator_id, common_static_analysis_results.package)
 
-        last_scenario = scenario
-
-    # ==== Shutdown ====
-    uninstall_apk(emulator_id, scenarios.scenarios[0].static_analysis_results.package)
-    # ==== ======== ====
+        # TODO: shutdown emulator?
+        # ==== ======== ====
 
     dynamic_analysis_results += [DynamicAnalysisResult(solved_scenario)
                                  for solved_scenario in scenarios.solved_scenarios]
-
     return dynamic_analysis_results
 
 
@@ -86,7 +93,6 @@ def set_task_progress__setup(task):
 
 def set_task_progress__scenarios(task, last_scenario, scenario):
     if task:
-
         if last_scenario:
             msg_done = 'Analysed activity ' + last_scenario.activity_name + '.'
         else:
@@ -97,32 +103,61 @@ def set_task_progress__scenarios(task, last_scenario, scenario):
         task.update_state(state='PROGRESS', meta={'msg_done': msg_done, 'msg_currently': msg_currently})
 
 
+def run_scenarios(scenarios, smart_input_results, smart_input_assignment, emulator_id, task):
+    log_id = 0
+    last_scenario = None
+    dynamic_analysis_results = []
+    for scenario in scenarios.scenarios:
+        set_task_progress__scenarios(task, last_scenario, scenario)
+
+        log_id += 1
+        dynamic_analysis_results += run_scenario(
+            scenario,
+            log_id,
+            emulator_id,
+            smart_input_results,
+            smart_input_assignment)
+        last_scenario = scenario
+
+    return dynamic_analysis_results
+
+
 def run_scenario(scenario, log_id, emulator_id, smart_input_results, smart_input_assignment):
-    logger.debug("Checking for vulnerable " + scenario.scenario_settings.vuln_type.value + " implementations")
+    installed_certificate_names = list()
+    mitm_proxy_process = None
+    # network_monitor_process = None
+    try:
+        # ==== Setup ====
+        if scenario.scenario_settings.sys_certificates:
+            for sys_certificate in scenario.scenario_settings.sys_certificates:
+                installed_certificate_names += [install_as_system_certificate(emulator_id, sys_certificate)]
 
-    # ==== Setup ====
-    if scenario.scenario_settings.sys_certificates:
-        for sys_certificate in scenario.scenario_settings.sys_certificates:
-            install_as_system_certificate(emulator_id, sys_certificate)
+        mitm_proxy_process = start_mitm_proxy(
+            scenario.scenario_settings.mitm_certificate,
+            scenario.scenario_settings.add_upstream_certs,
+            log_id)
 
-    mitm_proxy_process = start_mitm_proxy(
-        scenario.scenario_settings.mitm_certificate,
-        scenario.scenario_settings.add_upstream_certs,
-        log_id)
+        # network_monitor_process = start_network_monitor(emulator_id, static_analysis_results.package, log_id)
+        # ==== ===== ====
 
-    # network_monitor_process = start_network_monitor(emulator_id, static_analysis_results.package, log_id)
-    # ==== ===== ====
+        run_ui_traversal(scenario, emulator_id, smart_input_results, smart_input_assignment)
 
-    run_ui_traversal(scenario, emulator_id, smart_input_results, smart_input_assignment)
+        time.sleep(5)  # wait before shutting down mitmproxy since there might be a last request caused by ui traversal
 
-    time.sleep(5)  # wait before shutting down mitmproxy since there might be a last request caused by ui traversal
+        return [DynamicAnalysisResult(scenario, log_id)]
+    except Exception as e:
+        logger.exception("Crash during running scenario")
+        return [DynamicAnalysisResult(scenario, log_id, crashed_on_run=True)]
+    finally:
+        # ==== Shutdown ====
+        for name in installed_certificate_names:
+            uninstall_system_certificate(emulator_id, name)
 
-    # ==== Shutdown ====
-    # kill_network_monitor(network_monitor_process)
-    kill_mitm_proxy(mitm_proxy_process)
-    # ==== ======== ====
-
-    return [DynamicAnalysisResult(scenario, log_id)]
+        # if network_monitor_process
+        #   kill_network_monitor(network_monitor_process)
+        if mitm_proxy_process:
+            kill_mitm_proxy(mitm_proxy_process)
+        # ==== ======== ====
 
 
 def run_ui_traversal(scenario, emulator_id, smart_input_results, smart_input_assignment):

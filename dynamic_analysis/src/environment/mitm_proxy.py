@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def start_mitm_proxy(certificate, add_upstream_certs, log_id):
-    cmd = "mitmdump -dd -s '{scripts_dir}log.py {logs_dir}mitm_proxy_log{log_id}' --port 8080".format(
+    cmd = "mitmdump -q -dd -s '{scripts_dir}log.py {logs_dir}mitm_proxy_log{log_id}' --port 8080".format(
         scripts_dir=SCRIPTS_DIR,
         logs_dir=LOGS_DIR,
         log_id=log_id)
@@ -43,7 +43,7 @@ def kill_mitm_proxy(mitm_proxy_process):
     try:
         mitm_proxy_process.wait(timeout=10)
     except subprocess.TimeoutExpired as e:
-        logger.error("Could not close network monitor: {}", e)
+        logger.exception("Could not close network monitor")
     except OSError as e:
         logger.warn(e)
 

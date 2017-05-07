@@ -16,8 +16,6 @@ celery.conf.update()
 
 @celery.task(bind=True, name='dynamic_analysis_task')
 def dynamic_analysis_task(self, apk_name, scenarios, smart_input_results, smart_input_assignment):
-    logger.info("beginning of dynamic_analysis_task")
-    logger.info(str(scenarios))
     dynamic_analysis_results = analyze_dynamically(
         apk_name,
         DictObject(scenarios),

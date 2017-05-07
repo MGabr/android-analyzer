@@ -41,6 +41,6 @@ def kill_network_monitor(network_monitor_process):
     try:
         network_monitor_process.wait(timeout=10)
     except subprocess.TimeoutExpired as e:
-        logger.error("Could not close network monitor: {}", e)
+        logger.exception("Could not close network monitor")
     except OSError as e:
         logger.warn(e)

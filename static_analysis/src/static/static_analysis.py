@@ -8,12 +8,18 @@ sys.setrecursionlimit(40000)
 
 
 class StaticAnalysisResults:
-    def __init__(self, package, result_list):
+    def __init__(self, package, min_sdk_version, target_sdk_version, result_list):
         self.package = package
+        self.min_sdk_version = min_sdk_version
+        self.target_sdk_version = target_sdk_version
         self.result_list = result_list
 
     def __json__(self):
-        return {'package': self.package, 'result_list': self.result_list}
+        return {
+            'package': self.package,
+            'min_sdk_version': self.min_sdk_version,
+            'target_sdk_version': self.target_sdk_version,
+            'result_list': self.result_list}
 
 
 class StaticAnalysisResult:
@@ -200,6 +206,9 @@ class StaticAnalyzer:
         # get package name from root
         root = tree.getroot()
         package = root.attrib["package"]
+        min_sdk_version = None
+        target_sdk_version = None
+        platform_build_version_code = None
 
         for child in tree.iter():
             for attrib_name,attrib_value in child.attrib.iteritems():
@@ -211,11 +220,20 @@ class StaticAnalyzer:
                         attrib_value = "%s%s" % (package, attrib_value)
                     self.MANIFEST[attrib_value] = child.tag
 
-        return package
+                if "{http://schemas.android.com/apk/res/android}minSdkVersion" in attrib_name:
+                    min_sdk_version = attrib_value
+
+                if "{http://schemas.android.com/apk/res/android}targetSdkVersion" in attrib_name:
+                    target_sdk_version = attrib_value
+
+                if "platformBuildVersionCode" in attrib_name:
+                    platform_build_version_code = attrib_value
+
+        return package, min_sdk_version, target_sdk_version or platform_build_version_code
 
     # Analyses the decoded APK in the given path and returns a list of ???
     def analyze_statically(self, apk_path):
-        package = self.parse_manifest(apk_path)
+        package, min_sdk_version, target_sdk_version = self.parse_manifest(apk_path)
         self.process_apk(apk_path)
 
         results = list()
@@ -223,4 +241,4 @@ class StaticAnalyzer:
             node = self.NODES[vuln[0]]
             results += self.traverse(apk_path, vuln, node, set())
 
-        return StaticAnalysisResults(package, results)
+        return StaticAnalysisResults(package, min_sdk_version, target_sdk_version, results)

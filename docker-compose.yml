@@ -16,6 +16,11 @@ services:
     build:
       context: dynamic_analysis
       dockerfile: Dockerfile
+      args:
+        - API_VERSIONS=19,25
+        # Set the API versions that should be supported
+        # more versions may enable more specific analysis, but will significantly increase docker build time
+        # make sure that API_VERSIONS in environment are the same
     links:
       - rabbit
     depends_on:
@@ -33,6 +38,8 @@ services:
       - DISPLAY=$DISPLAY
       - XAUTHORITY=$XAUTHORITY
       - QT_XKB_CONFIG_ROOT=/usr/share/X11/xkb
+      - API_VERSIONS=19,25
+      # make sure that API_VERSIONS fit the ones specified in build args
 
   static_analysis:
     build:

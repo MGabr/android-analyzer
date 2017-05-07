@@ -29,12 +29,18 @@ class Scenarios:
 
 
 class StaticAnalysisResults:
-    def __init__(self, package, result_list):
+    def __init__(self, package, min_sdk_version, target_sdk_version, result_list):
         self.package = package
+        self.min_sdk_version = min_sdk_version
+        self.target_sdk_version = target_sdk_version
         self.result_list = result_list
 
     def __json__(self):
-        return {'package': self.package, 'result_list': self.result_list}
+        return {
+            'package': self.package,
+            'min_sdk_version': self.min_sdk_version,
+            'target_sdk_version': self.target_sdk_version,
+            'result_list': self.result_list}
 
 
 def get_all_of_user(static_analysis_results):
@@ -47,11 +53,16 @@ def get_all_of_user(static_analysis_results):
             if static_analysis_result.vuln_type == scenario_setting.vuln_type.value:
                 matching += [static_analysis_result]
 
+        # TODO: ActivitiesScenarios
         if matching:
             # create combined scenario for static analysis results with same activity name
             for activity_name in {result.meth_nm for result in matching}:
                 combined_result_list = [result for result in matching if result.meth_nm == activity_name]
-                combined_results = StaticAnalysisResults(static_analysis_results.package, combined_result_list)
+                combined_results = StaticAnalysisResults(
+                    static_analysis_results.package,
+                    static_analysis_results.min_sdk_version,
+                    static_analysis_results.target_sdk_version,
+                    combined_result_list)
                 scenarios += [Scenario(scenario_setting, activity_name, combined_results)]
         else:
             # there is no static analysis result with the right vulnerability type for this scenario
