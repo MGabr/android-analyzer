@@ -10,8 +10,7 @@
     <table class="table table-striped col-md-8">
         <thead>
             <tr>
-                <th>For custom implementations of</th>
-                <th>Certificate settings</th>
+                <th>Name</th>
                 <th>Default scenario</th>
                 <th>Enabled</th>
             </tr>
@@ -21,11 +20,8 @@
             <tr>
                 <td>
                     <a href="{{ url_for('show_scenario', id=sc.id) }}">
-                        {{ sc.vuln_type.value }}
+                        {{ sc.name }}
                     </a>
-                </td>
-                <td>
-                    {{ sc.mitm_certificate.name }}
                 </td>
                 <td>
                     {{ sc.is_default }}

@@ -7,6 +7,7 @@ from src.models.vuln_type import VulnType
 class ScenarioSettings(db.Model):
     __tablename__ = 'scenario_settings'
     id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True)
     vuln_type = db.Column(db.Enum(VulnType))
     mitm_certificate_id = db.Column(db.Integer, db.ForeignKey('certificates.id'))
     mitm_certificate = db.relationship('Certificate',)
@@ -32,6 +33,7 @@ class ScenarioSettings(db.Model):
     def __json__(self):
         return {
             'id': self.id,
+            'name': self.name,
             'vuln_type': self.vuln_type,
             'mitm_certificate': self.mitm_certificate,
             'sys_certificates': self.sys_certificates,

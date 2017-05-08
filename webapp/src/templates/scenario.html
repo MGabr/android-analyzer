@@ -9,6 +9,10 @@
     <h1>Scenario</h1>
 
     <form id="form">
+        <label for="name">Name</label>
+        <input type="text" class="form-control" id="name" name="name" value="{{ sc.name if sc.name != None }}"
+               {% if sc.is_default %}disabled{% endif %}>
+
         <label for="is_default">Is default scenario</label>
         <input type="checkbox" class="form-control" id="is_default" name="is_default" style="width: 33px" disabled
                {% if sc.is_default %}checked{% endif %}>

@@ -4,9 +4,9 @@ from src.app import db
 from src.models.certificate import Certificate
 from src.models.scenario_settings import ScenarioSettings
 from src.models.vuln_type import VulnType
-from src.services.errors import check_form, EntityNotExistsError
+from src.services.errors import check_form, EntityNotExistsError, FieldExistsError
 
-required_fields = ['vuln_type', 'mitm_certificate']
+required_fields = ['name', 'vuln_type', 'mitm_certificate']
 
 
 def edit(id, form):
@@ -15,9 +15,12 @@ def edit(id, form):
 
     if not scenario.is_default:
         check_form(form, required_fields)
+        if scenario.name != form['name']:
+            _check_name_exists(form)
 
         mitm_certificate, sys_certificates, user_certificates = _get_scenario_certificates(form)
 
+        scenario.name = form['name']
         scenario.vuln_type = VulnType(form['vuln_type'])
         scenario.mitm_certificate = mitm_certificate
         scenario.sys_certificates = sys_certificates
@@ -31,11 +34,13 @@ def edit(id, form):
 
 def add(form):
     check_form(form, required_fields)
+    _check_name_exists(form)
 
     mitm_certificate, sys_certificates, user_certificates = _get_scenario_certificates(form)
 
     scenario = ScenarioSettings(
         user=current_user,
+        name=form['name'],
         vuln_type=VulnType(form['vuln_type']),
         mitm_certificate=mitm_certificate,
         sys_certificates=sys_certificates,
@@ -49,6 +54,11 @@ def add(form):
     db.session.commit()
 
     return scenario
+
+
+def _check_name_exists(form):
+    if ScenarioSettings.query.filter(ScenarioSettings.name == form['name']).first():
+        raise FieldExistsError('ScenarioSettings', 'name')
 
 
 def delete(id):
