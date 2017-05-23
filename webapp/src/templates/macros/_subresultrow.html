@@ -1,0 +1,28 @@
+{% macro get_subresult_row(result, rv) -%}
+{% if rv %}
+    <td id="{{ activityselect_id_for_result(result, rv) }}" class="{{ activityselect_class_for_result(result) }}">
+        {{ rv.activity_name()}}
+        {% if rv.is_activity_to_select() %}
+        <span class="glyphicon glyphicon-small glyphicon-ok-sign clickable span-select"></span>
+        <span class="glyphicon glyphicon-small glyphicon-remove-sign clickable span-discard"></span>
+        {% endif %}
+    </td>
+    <td>
+        {% if not rv.is_activity_to_select() %}
+        <span class="{{ glyphicon_for_dynamic_result(rv) }} clickable"
+              data-toggle="popover"
+              title="{{ connected_hostnames_tooltiptitle_for_result(rv) }}"
+              data-content="{{ connected_hostnames_tooltip_for_result(rv, result) }}"></span>
+        {% endif %}
+    </td>
+    <td class="fit">
+        {% for line in connected_hostnames_for_result(rv).splitlines() %}
+        {{ line }}<br />
+        {% endfor %}
+    </td>
+{% else %}
+    <td></td>
+    <td></td>
+    <td></td>
+{% endif %}
+{%- endmacro %}

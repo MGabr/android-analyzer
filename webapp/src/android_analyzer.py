@@ -1,5 +1,6 @@
 import logging
 import os
+from celery import states
 from urlparse import urlparse, urljoin
 
 from flask import request, render_template, url_for, jsonify
@@ -14,6 +15,7 @@ from src.models.scenario_settings import ScenarioSettings
 from src.models.smart_input_assignments import SmartInputAssignment
 from src.models.vuln_type import VulnType
 from src.services import certificate_service
+from src.services import result_view_service
 from src.services import scenario_service
 from src.services import scenario_settings_service
 from src.services import user_service
@@ -76,15 +78,6 @@ def show_certificate(id):
     return render_template('certificate.html', new=new, c=c)
 
 
-@app.route('/result', methods=['GET'])
-def show_result():
-    id = request.args.get('dynamic_analysis_id')
-    task = celery.AsyncResult(id)
-
-    r = DictObject(task.result)
-    return render_template('result.html', log_analysis_results=r.log_analysis_results)
-
-
 # ---- Api for AJAX calls ----
 
 
@@ -94,7 +87,9 @@ def start_static_analysis():
         filename = apks.save(request.files['apk'])
         filename = filename.replace('.apk', '')
         task = celery.send_task('static_analysis_task', args=[filename])
-        return _json_poll_redirect(url_for('get_static_analysis', id=task.id))
+
+        html = result_view_service.render_all_scenario_settings()
+        return _json_poll_redirect(url_for('get_static_analysis', id=task.id), html=html)
     else:
         return jsonify({'error': True})
 
@@ -103,15 +98,21 @@ def start_static_analysis():
 def get_static_analysis(id):
     task = celery.AsyncResult(id)
 
-    if task.state == 'SUCCESS':
-        task.result['dynamic_analysis_url'] = url_for('start_dynamic_analysis', static_analysis_id=task.id)
+    result = dict()
 
-    return jsonify(task.result)
+    if task.state == states.SUCCESS:
+        result['dynamic_analysis_url'] = url_for('start_dynamic_analysis', static_analysis_id=task.id)
+        result['activities_dynamic_analysis_url'] = url_for(
+            'start_activities_dynamic_analysis',
+            scenario_settings_id='replace',
+            static_analysis_id=task.id)
+        r = DictObject(task.result)
+        result['html'] = result_view_service.render_static_analysis_results(r.static_analysis_results)
 
+    if task.state == states.FAILURE:
+        result['error'] = True
 
-@app.route('/activities/<id>', methods=['POST'])
-def set_activities(id):
-    pass
+    return jsonify(result)
 
 
 @app.route('/dynamic_analysis', methods=['POST'])
@@ -123,6 +124,10 @@ def start_dynamic_analysis():
     # TODO: parallelize
     scenarios = scenario_service.get_all_of_user(r.static_analysis_results)
 
+    if not scenarios.scenarios:
+        # no dynamic analysis to execute, maybe only SelectedActivities?
+        return jsonify({})
+
     apk_name = scenarios.scenarios[0].static_analysis_results.result_list[0].apk_folder.split("/")[-1]
 
     newtask = celery.send_task(
@@ -132,23 +137,55 @@ def start_dynamic_analysis():
     return _json_poll_redirect(url_for('get_dynamic_analysis', id=newtask.id))
 
 
+@app.route('/dynamic_analysis/scenario/<scenario_settings_id>/activities', methods=['POST'])
+def start_activities_dynamic_analysis(scenario_settings_id):
+    id = request.args.get('static_analysis_id')
+    task = celery.AsyncResult(id)
+    r = DictObject(task.result)
+
+    choosen_activities = request.get_json()
+    if not choosen_activities:
+        return jsonify({})
+
+    scenarios = scenario_service.get_for_choosen_activities_and_settings(
+        r.static_analysis_results,
+        choosen_activities,
+        scenario_settings_id)
+
+    apk_name = scenarios.scenarios[0].static_analysis_results.result_list[0].apk_folder.split("/")[-1]
+
+    newtask = celery.send_task(
+        'dynamic_analysis_task',
+        args=[apk_name, scenarios, r.smart_input_results, SmartInputAssignment()])
+
+    html = result_view_service.render_selected_activities(scenarios, scenario_settings_id)
+    return _json_poll_redirect(url_for('get_dynamic_analysis', id=newtask.id), html=html)
+
+
 @app.route('/dynamic_analysis/<id>', methods=['GET'])
 def get_dynamic_analysis(id):
     task = celery.AsyncResult(id)
 
-    if task.state == 'SUCCESS':
-        r = DictObject(task.result)
-        apk_folder = r.log_analysis_results[0].dynamic_analysis_result.scenario.static_analysis_results.result_list[0].apk_folder
-        apk_name = apk_folder.split("/")[-1]
+    r = DictObject(task.result)
+    if not r.get('log_analysis_results'):
+        return jsonify({})
 
-        try:
-            os.remove(os.path.join(app.config['UPLOADED_APKS_DEST'], apk_name + ".apk"))
-        except OSError as e:
-            logger.warn(e)
+    result = dict()
+    result['html'] = result_view_service.render_log_analysis_results(r.log_analysis_results)
+    if task.state == states.SUCCESS:
+        result['finished'] = True
 
-        task.result['result_redirect'] = url_for('show_result', dynamic_analysis_id=task.id)
+    return jsonify(result)
 
-    return jsonify(task.result)
+    # if task.state == 'SUCCESS':
+        # r = DictObject(task.result)
+        # apk_folder = r.log_analysis_results[0].dynamic_analysis_result.scenario.static_analysis_results.result_list[0].apk_folder
+        # apk_name = apk_folder.split("/")[-1]
+
+        # try:
+        #     os.remove(os.path.join(app.config['UPLOADED_APKS_DEST'], apk_name + ".apk"))
+        # except OSError as e:
+        #    logger.warn(e)
 
 
 @app.route('/login', methods=["POST"])
@@ -223,7 +260,9 @@ def _json_redirect(url):
     return jsonify({'redirect': url})
 
 
-def _json_poll_redirect(url):
+def _json_poll_redirect(url, html=None):
+    if html:
+        return jsonify({'poll_redirect': url, 'html': html})
     return jsonify({'poll_redirect': url})
 
 

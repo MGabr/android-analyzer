@@ -28,11 +28,9 @@ class GetApkActivities:
         self.dx = VMAnalysis(self.d)
 
     def get_all_activities(self):
-        package = self.a.get_package()
         activity_names = self.a.get_activities()
-        result_list = [StaticAnalysisResult(self.apk_name, None, a, "activity", "SelectedActivities")
+        return [StaticAnalysisResult(self.apk_name, None, a, "activity", "SelectedActivities")
                        for a in activity_names]
-        return StaticAnalysisResults(package, result_list)
 
     # def get_activities_by_str(self, str):
     #     for tv, candidate in self.dx.get_tainted_variables().get_strings():
@@ -40,17 +38,4 @@ class GetApkActivities:
     #             # at this point we have the method in which the string is used
     #             # how to find the calling method, and then finally the activity?
     #             tv.show_paths(self.d)
-
-
-def get_static_analysis_results_activities(sars):
-    return [sar.meth_nm for sar in sars.result_list]
-
-
-if __name__ == "__main__":
-    analysis = GetApkActivities("acceptallhostnames-release")
-    acts = analysis.get_all_activities()
-    act_strs = get_static_analysis_results_activities(acts)
-    print(acts)
-    print(act_strs)
-
 

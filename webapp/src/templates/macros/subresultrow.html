@@ -1,0 +1,6 @@
+{% import "macros/_subresultrow.html" as r with context %}
+{% macro subresult_row(result, rv) -%}
+<tr id="{{  subresultrow_id_for_result(result, rv) }}">
+    {{ r.get_subresult_row(result, rv) }}
+</tr>
+{%- endmacro %}

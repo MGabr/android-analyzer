@@ -118,6 +118,22 @@ def _add_default_settings():
         info_message='''The app has a vulnerable TrustManager implementation in which certificate pinning is not implemented (securely). If the other scenario with the same description is not vulnerable, then this is a getPeerCertificates() bug vulnerability.''',
         add_upstream_certs=True)
 
+    no_pinning_sa = ScenarioSettings(
+        name="App accepting fixed trusted CA (No pinning)",
+        vuln_type=VulnType.selected_activities,
+        mitm_certificate=untrusted_ca,
+        sys_certificates=[untrusted_ca],
+        info_message='''The app has not implemented certificate pinning (securely).''')
+
+    no_pinning_sa_added_upstream_certs = ScenarioSettings(
+        name="App accepting peer certificates (No pinning)",
+        vuln_type=VulnType.selected_activities,
+        mitm_certificate=untrusted_ca,
+        sys_certificates=[untrusted_ca],
+        info_message='''The app has not implemented certificate pinning (securely). If the other scenario with the same description is not vulnerable, then this is a getPeerCertificates() bug vulnerability.''',
+        add_upstream_certs=True)
+
+
     mitmproxy_ca_signed_wv = ScenarioSettings(
         name="WebViewClient accepting untrusted CA",
         vuln_type=VulnType.web_view_client,
@@ -148,6 +164,7 @@ def _add_default_settings():
     # TODO: expired_trusted_cert_wv? how?
     # TODO: notyetvalid_trusted_cert_wv? how?
 
+
     db.session.add(mitmproxy_ca_signed_tm)
     db.session.add(expired_trusted_ca_tm)
     db.session.add(other_hostname_untrusted_hv)
@@ -155,6 +172,8 @@ def _add_default_settings():
     db.session.add(no_pinning_hv)
     db.session.add(no_pinning_tm)
     db.session.add(no_pinning_tm_added_upstream_certs)
+    db.session.add(no_pinning_sa)
+    db.session.add(no_pinning_sa_added_upstream_certs)
     db.session.add(mitmproxy_ca_signed_wv)
     db.session.add(expired_trusted_ca_wv)
     db.session.add(other_hostname_untrusted_wv)

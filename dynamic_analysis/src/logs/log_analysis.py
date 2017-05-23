@@ -21,7 +21,7 @@ class LogAnalysisResult:
 def analyse_logs(dynamic_analysis_results):
     log_analysis_results = []
     for dynamic_analysis_result in dynamic_analysis_results:
-        if dynamic_analysis_result.has_been_run:
+        if dynamic_analysis_result.has_been_run and os.path.isfile(dynamic_analysis_result.get_mitm_proxy_log()):
             log_analysis_results += [LogAnalysisResult(dynamic_analysis_result, analyse_log(dynamic_analysis_result))]
         else:
             log_analysis_results += [LogAnalysisResult(dynamic_analysis_result)]

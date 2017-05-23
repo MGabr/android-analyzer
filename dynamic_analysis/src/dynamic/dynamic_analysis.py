@@ -6,20 +6,23 @@ import time
 from com.dtmilano.android.viewclient import ViewClient
 
 from src.definitions import INPUT_APK_DIR, LOGS_DIR
-from src.environment import device_manager
 from src.environment.certificate_installation import install_as_system_certificate, uninstall_system_certificate
+from src.environment.device_manager import DeviceManager
 from src.environment.mitm_proxy import start_mitm_proxy, kill_mitm_proxy
+from src.logs.log_analysis import analyse_logs, LogAnalysisResult
+
 
 logger = logging.getLogger(__name__)
 
 
 class DynamicAnalysisResult:
     # if no dynamic analysis was run, log_id should not be set
-    def __init__(self, scenario, log_id=None, crashed_on_run=False, crashed_on_setup=False):
+    def __init__(self, scenario, log_id=None, crashed_on_run=False, crashed_on_setup=False, is_running=False):
         self.scenario = scenario
         self.log_id = log_id
         self.crashed_on_run = crashed_on_run
         self.crashed_on_setup = crashed_on_setup
+        self.is_running = is_running
 
         self.is_statically_vulnerable = self.scenario.is_statically_vulnerable
         self.has_been_run = bool(self.log_id)
@@ -37,20 +40,21 @@ class DynamicAnalysisResult:
             'crashed_on_run': self.crashed_on_run,
             'crashed_on_setup': self.crashed_on_setup,
             'is_statically_vulnerable': self.is_statically_vulnerable,
-            'has_been_run': self.has_been_run}
+            'has_been_run': self.has_been_run,
+            'is_running': self.is_running}
 
 
 def analyze_dynamically(apk_name, scenarios, smart_input_results, smart_input_assignment, task=None):
     common_static_analysis_results = scenarios.scenarios[0].static_analysis_results
 
-    set_task_progress__setup(task)
+    set_task_progress__setup(task, scenarios)
 
     emulator_id = None
     apk_path = INPUT_APK_DIR + apk_name + ".apk"
     installed = False
     try:
         # ==== Setup ====
-        emulator_id = device_manager.get_emulator(
+        emulator_id = DeviceManager.get_emulator(
             common_static_analysis_results.min_sdk_version,
             common_static_analysis_results.target_sdk_version)
 
@@ -62,7 +66,7 @@ def analyze_dynamically(apk_name, scenarios, smart_input_results, smart_input_as
 
         time.sleep(1)
 
-        dynamic_analysis_results = run_scenarios(
+        log_analysis_results = run_scenarios(
             scenarios,
             smart_input_results,
             smart_input_assignment,
@@ -70,7 +74,8 @@ def analyze_dynamically(apk_name, scenarios, smart_input_results, smart_input_as
             task)
     except Exception as e:
         logger.exception("Crash during setup")
-        dynamic_analysis_results = [DynamicAnalysisResult(s, crashed_on_setup=True) for s in scenarios.scenarios]
+        log_analysis_results = analyse_logs([DynamicAnalysisResult(s, crashed_on_setup=True)
+                                             for s in scenarios.scenarios])
     finally:
         # ==== Shutdown ====
         if installed:
@@ -79,20 +84,25 @@ def analyze_dynamically(apk_name, scenarios, smart_input_results, smart_input_as
         # TODO: shutdown emulator?
         # ==== ======== ====
 
-    dynamic_analysis_results += [DynamicAnalysisResult(solved_scenario)
-                                 for solved_scenario in scenarios.solved_scenarios]
-    return dynamic_analysis_results
+    log_analysis_results += analyse_logs([DynamicAnalysisResult(solved_scenario)
+                                              for solved_scenario in scenarios.solved_scenarios])
+    return log_analysis_results
 
 
-def set_task_progress__setup(task):
+def set_task_progress__setup(task, scenarios):
     if task:
+        current_log_analysis_results = [LogAnalysisResult(DynamicAnalysisResult(s, is_running=True))
+                                        for s in scenarios.scenarios]
+        current_log_analysis_results += [LogAnalysisResult(DynamicAnalysisResult(s))
+                                         for s in scenarios.solved_scenarios]
         task.update_state(
             state='PROGRESS',
             meta={'msg_done': 'Started dynamic analysis.',
-                  'msg_currently': 'Now setting up dynamic analysis environment.'})
+                  'msg_currently': 'Now setting up dynamic analysis environment.',
+                  'log_analysis_results': current_log_analysis_results})
 
 
-def set_task_progress__scenarios(task, last_scenario, scenario):
+def set_task_progress__scenarios(task, last_scenario, scenario, scenarios, finished_log_analysis_results):
     if task:
         if last_scenario:
             msg_done = 'Analysed activity ' + last_scenario.activity_name + '.'
@@ -101,18 +111,30 @@ def set_task_progress__scenarios(task, last_scenario, scenario):
 
         msg_currently = 'Analysing activity ' + scenario.activity_name + '.'
 
-        task.update_state(state='PROGRESS', meta={'msg_done': msg_done, 'msg_currently': msg_currently})
+        i = scenarios.scenarios.index(scenario)
+        remaining_scenarios = scenarios.scenarios[i:]
+        current_log_analysis_results = [LogAnalysisResult(DynamicAnalysisResult(s, is_running=True))
+                                        for s in remaining_scenarios]
+        current_log_analysis_results += [LogAnalysisResult(DynamicAnalysisResult(s))
+                                         for s in scenarios.solved_scenarios]
+        current_log_analysis_results += finished_log_analysis_results
+
+        task.update_state(
+            state='PROGRESS',
+            meta={'msg_done': msg_done,
+                  'msg_currently': msg_currently,
+                  'log_analysis_results': current_log_analysis_results})
 
 
 def run_scenarios(scenarios, smart_input_results, smart_input_assignment, emulator_id, task):
     log_id = 0
     last_scenario = None
-    dynamic_analysis_results = []
+    log_analysis_results = []
     for scenario in scenarios.scenarios:
-        set_task_progress__scenarios(task, last_scenario, scenario)
+        set_task_progress__scenarios(task, last_scenario, scenario, scenarios, log_analysis_results)
 
         log_id += 1
-        dynamic_analysis_results += run_scenario(
+        log_analysis_results += run_scenario(
             scenario,
             log_id,
             emulator_id,
@@ -120,7 +142,7 @@ def run_scenarios(scenarios, smart_input_results, smart_input_assignment, emulat
             smart_input_assignment)
         last_scenario = scenario
 
-    return dynamic_analysis_results
+    return log_analysis_results
 
 
 def run_scenario(scenario, log_id, emulator_id, smart_input_results, smart_input_assignment):
@@ -145,10 +167,10 @@ def run_scenario(scenario, log_id, emulator_id, smart_input_results, smart_input
 
         time.sleep(5)  # wait before shutting down mitmproxy since there might be a last request caused by ui traversal
 
-        return [DynamicAnalysisResult(scenario, log_id)]
+        return analyse_logs([DynamicAnalysisResult(scenario, log_id)])
     except Exception as e:
         logger.exception("Crash during running scenario")
-        return [DynamicAnalysisResult(scenario, log_id, crashed_on_run=True)]
+        return analyse_logs([DynamicAnalysisResult(scenario, log_id, crashed_on_run=True)])
     finally:
         # ==== Shutdown ====
         for name in installed_certificate_names:

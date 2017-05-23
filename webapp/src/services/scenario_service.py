@@ -1,4 +1,5 @@
 from src.services.scenario_settings_service import get_all_enabled_of_user
+from src.models.vuln_type import VulnType
 
 
 class Scenario:
@@ -43,17 +44,38 @@ class StaticAnalysisResults:
             'result_list': self.result_list}
 
 
+def get_for_choosen_activities_and_settings(static_analysis_results, choosen_activities, scenario_settings_id):
+    filtered_result_list = [r for r in static_analysis_results.result_list if r.meth_nm in choosen_activities]
+    filtered_results = StaticAnalysisResults(
+        static_analysis_results.package,
+        static_analysis_results.min_sdk_version,
+        static_analysis_results.target_sdk_version,
+        filtered_result_list)
+    filtered_settings = [s for s in get_all_enabled_of_user() if s.id == int(scenario_settings_id)]
+    return _get_of(filtered_results, filtered_settings)
+
+
 def get_all_of_user(static_analysis_results):
+    filtered_result_list = [r for r in static_analysis_results.result_list
+                            if r.vuln_type.value != VulnType.selected_activities.value]
+    filtered_results = StaticAnalysisResults(
+        static_analysis_results.package,
+        static_analysis_results.min_sdk_version,
+        static_analysis_results.target_sdk_version,
+        filtered_result_list)
+    return _get_of(filtered_results, get_all_enabled_of_user())
+
+
+def _get_of(static_analysis_results, scenario_settings):
     scenarios = []
     solved_scenarios = []
-    for scenario_setting in get_all_enabled_of_user():
+    for scenario_setting in scenario_settings:
         matching = []
         # get only static analysis results with the right vulnerability type
         for static_analysis_result in static_analysis_results.result_list:
-            if static_analysis_result.vuln_type == scenario_setting.vuln_type.value:
+            if static_analysis_result.vuln_type.value == scenario_setting.vuln_type.value:
                 matching += [static_analysis_result]
 
-        # TODO: ActivitiesScenarios
         if matching:
             # create combined scenario for static analysis results with same activity name
             for activity_name in {result.meth_nm for result in matching}:

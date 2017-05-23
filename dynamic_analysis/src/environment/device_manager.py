@@ -6,21 +6,34 @@ import time
 logger = logging.getLogger(__name__)
 
 
-def get_emulator(min_sdk_version, target_sdk_version):
-    api = _get_fitting_sdk_version(min_sdk_version, target_sdk_version)
+class DeviceManager:
+    running_emulators = dict()
+    next_port = 5554
 
-    # TODO: maybe use -gpu on
-    no_audio = "export QEMU_AUDIO_DRV=none && "
-    emulator_type = str(api)
-    port = "5554"
-    other_opts = "-wipe-data -use-system-libs -writable-system -no-boot-anim -http-proxy http://0.0.0.0:8080"
-    cmd = no_audio + "emulator -avd " + emulator_type + " -port " + port + " " + other_opts + "  &"
-    logger.debug(cmd)
-    subprocess.check_call(cmd, shell=True)
-    emulator_id = "emulator-" + port
-    _wait_until_boot_completed(emulator_id)
+    @classmethod
+    def get_emulator(cls, min_sdk_version, target_sdk_version):
+        api = _get_fitting_sdk_version(min_sdk_version, target_sdk_version)
 
-    return emulator_id
+        if api in cls.running_emulators:
+            return cls.running_emulators[api]
+
+        # TODO: maybe use -gpu on
+        no_audio = "export QEMU_AUDIO_DRV=none && "
+        emulator_type = str(api)
+        port = str(cls.next_port)
+        other_opts = "-wipe-data -use-system-libs -writable-system -no-boot-anim -http-proxy http://0.0.0.0:8080"
+
+        cmd = no_audio + "emulator -avd " + emulator_type + " -port " + port + " " + other_opts + "  &"
+        logger.debug(cmd)
+        subprocess.check_call(cmd, shell=True)
+
+        emulator_id = "emulator-" + port
+        _wait_until_boot_completed(emulator_id)
+
+        cls.running_emulators[api] = emulator_id
+        cls.next_port += 2
+
+        return emulator_id
 
 
 def _get_fitting_sdk_version(min_sdk_version, target_sdk_version):
@@ -47,6 +60,7 @@ def _wait_until_boot_completed(emulator_id):
     cmd = "adb -s " + emulator_id + " wait-for-device shell getprop sys.boot_completed"
     while "1" not in subprocess.check_output(cmd, shell=True):
         time.sleep(1)
+        logger.debug(cmd)
 
 
 def return_emulator(emulator_id):

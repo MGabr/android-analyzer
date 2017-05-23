@@ -36,7 +36,9 @@ class StaticAnalysisResult:
             'vuln_entry': self.vuln_entry,
             'meth_nm': self.meth_nm,
             'tag': self.tag,
-            'vuln_type': self.vuln_type}
+            'vuln_type': {
+                'value': self.vuln_type
+            }}
 
 
 class Node:

@@ -1,6 +1,9 @@
 .glyphicon {
     font-size: 35px;
 }
+.glyphicon-small {
+    font-size: 15px;
+}
 
 /* adjust width to content */
 .table th.fit,
