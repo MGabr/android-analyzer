@@ -3,6 +3,7 @@ import re
 import sys
 from xml.etree import ElementTree
 
+
 # increase recursion limit
 sys.setrecursionlimit(40000)
 
@@ -39,6 +40,15 @@ class StaticAnalysisResult:
             'vuln_type': {
                 'value': self.vuln_type
             }}
+
+    def __key(self):
+        return (self.apk_folder, self.vuln_entry, self.meth_nm, self.tag, self.vuln_type)
+
+    def __eq__(self, other):
+        return self.__key() == other.__key()
+
+    def __hash__(self):
+        return hash(self.__key())
 
 
 class Node:
@@ -239,8 +249,11 @@ class StaticAnalyzer:
         self.process_apk(apk_path)
 
         results = list()
-        for vuln in self.VULN:
+
+        for vuln in set(self.VULN):
             node = self.NODES[vuln[0]]
             results += self.traverse(apk_path, vuln, node, set())
+
+        results = list(set(results))  # eliminate duplicates
 
         return StaticAnalysisResults(package, min_sdk_version, target_sdk_version, results)
