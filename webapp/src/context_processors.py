@@ -111,8 +111,19 @@ def context_processor():
     def _display_connected_hostnames(r):
         connected_hosts = None
         if r.log_analysis_result:
-            connected_hosts = r.log_analysis_result.connected_hosts
+            connected_hosts = [host for host in r.log_analysis_result.connected_hosts if not 'http://' in host]
         return display_br_joined(connected_hosts or [])
+
+    def _display_connected_http_hostnames_str(r):
+        connected_hosts = None
+        if r.log_analysis_result:
+            connected_hosts = [host for host in r.log_analysis_result.connected_hosts if 'http://' in host]
+        if connected_hosts:
+            return '''<br />
+            Additionally HTTP requests to the following URLs were made:<br />
+            {hns}
+            '''.format(hns=display_br_joined(connected_hosts or []))
+        return ""
 
     def connected_hostnames_for_result(r):
         connected_hosts = None
@@ -139,9 +150,9 @@ def context_processor():
         elif r.is_vulnerable():
             return '''
             The app is vulnerable to a Man-in-the-Middle attack.<br />
-            Requests to the following IPs/hostnames could be intercepted:<br />
-            {hns}
-            '''.format(hns=_display_connected_hostnames(r))
+            Requests to the following hostnames could be intercepted:<br />
+            {hns}{hhns}
+            '''.format(hns=_display_connected_hostnames(r), hhns=_display_connected_http_hostnames_str(r))
         elif r.is_statically_vulnerable():
             return '''
             Dynamic analysis could not show that the app is vulnerable to a Man-in-the-Middle attack.<br />

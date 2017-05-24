@@ -34,20 +34,25 @@ def analyse_log(dynamic_analysis_result):
 
     host_regex = r"^host: (.*)$"
     url_regex = r"^url: (.*)$"
+
+    http_host_regex = r"^http host: (.*)$"
+    http_url_regex = r"http url: (.*)$"
+
     ip_regex = r"^ip: (.*)$"
 
     hosts = set()
-    urls = set()
-    ips = set()
+
     for line in mitm_proxy:
 
         host = re.findall(host_regex, line)
         if host:
             hosts |= set(host)
 
-        url = re.findall(url_regex, line)
-        if url:
-            urls |= set(url)
+        if dynamic_analysis_result.scenario.scenario_settings.report_http:
+            http_host = re.findall(http_host_regex, line)
+            if http_host:
+                hosts |= set(http_host)
+
 
     # connected_ips = set()
     # for line in network:
@@ -55,8 +60,6 @@ def analyse_log(dynamic_analysis_result):
     #         ip_regex = r".*" + ip + r".*" # TODO: escape dots
     #         if re.match(ip_regex, line):
     #             connected_ips |= {ip}
-
-    print "connected_hosts: " + str(hosts)
 
     mitm_proxy.close()
     os.remove(mitm_proxy.name)

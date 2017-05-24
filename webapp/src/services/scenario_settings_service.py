@@ -26,6 +26,7 @@ def edit(id, form):
         scenario.sys_certificates = sys_certificates
         scenario.user_certificates = user_certificates
         scenario.info_message = form.get('info_message')
+        scenario.report_http = 'report_http' in form
 
     db.session.commit()
 
@@ -47,7 +48,8 @@ def add(form):
         user_certificates=user_certificates,
         info_message=form.get('info_message'),
         is_default=False,
-        enabled='enabled' in form
+        enabled='enabled' in form,
+        report_http='report_http' in form
     )
 
     db.session.add(scenario)

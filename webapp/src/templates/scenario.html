@@ -65,6 +65,11 @@
         <label for="info_message">Info message</label>
         <textarea class="form-control" id="info_message" name="info_message" rows="3"
                   {% if sc.is_default %}disabled{% endif %}>{{ sc.info_message }}</textarea>
+
+        <label for="report_http">Report HTTP traffic</label>
+        <input type="checkbox" class="form-control" id="report_http" name="report_http" style="width: 33px"
+               {% if sc.report_http %}checked{% endif %}
+               {% if sc.is_default %}disabled{% endif %}>
     </form>
 
     {% if new %}

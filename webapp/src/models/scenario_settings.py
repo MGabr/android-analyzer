@@ -20,6 +20,7 @@ class ScenarioSettings(db.Model):
     info_message = db.Column(db.String(2048))
     is_default = db.Column(db.Boolean, default=True)
     enabled = db.Column(db.Boolean, default=True)
+    report_http = db.Column(db.Boolean, default=True)
     add_upstream_certs = db.Column(db.Boolean, default=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.username'))
     user = db.relationship('User', back_populates='scenarios')
@@ -41,5 +42,6 @@ class ScenarioSettings(db.Model):
             'info_message': self.info_message,
             'is_default': self.is_default,
             'enabled': self.enabled,
+            'report_http': self.report_http,
             'add_upstream_certs': self.add_upstream_certs,
             'user': self.user}

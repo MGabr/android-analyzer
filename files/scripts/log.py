@@ -15,7 +15,12 @@ class Logger:
         file_to_create.close()
 
     def request(self, flow):
+
         if flow.client_conn.tls_established:
             with open(self.logfile, "a") as logfile:
                 logfile.write("host: " + flow.request.pretty_host + "\n")
                 logfile.write("url: " + flow.request.pretty_url + "\n")
+        elif flow.request.scheme == "http":
+            with open(self.logfile, "a") as logfile:
+                logfile.write("http host: " + "http://" + flow.request.pretty_host + "\n")
+                logfile.write("http url: " + "http://" + flow.request.pretty_url + "\n")
