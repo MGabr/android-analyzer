@@ -9,7 +9,9 @@ from src.definitions import INPUT_APK_DIR, LOGS_DIR
 from src.environment.certificate_installation import install_as_system_certificate, uninstall_system_certificate
 from src.environment.device_manager import DeviceManager
 from src.environment.mitm_proxy import start_mitm_proxy, kill_mitm_proxy
+from src.environment.network_monitor import start_network_monitor, kill_network_monitor
 from src.logs.log_analysis import analyse_logs, LogAnalysisResult
+from celery.exceptions import SoftTimeLimitExceeded
 
 
 logger = logging.getLogger(__name__)
@@ -17,12 +19,19 @@ logger = logging.getLogger(__name__)
 
 class DynamicAnalysisResult:
     # if no dynamic analysis was run, log_id should not be set
-    def __init__(self, scenario, log_id=None, crashed_on_run=False, crashed_on_setup=False, is_running=False):
+    def __init__(self,
+                 scenario,
+                 log_id=None,
+                 crashed_on_run=False,
+                 crashed_on_setup=False,
+                 is_running=False,
+                 timed_out=False):
         self.scenario = scenario
         self.log_id = log_id
         self.crashed_on_run = crashed_on_run
         self.crashed_on_setup = crashed_on_setup
         self.is_running = is_running
+        self.timed_out = timed_out
 
         self.is_statically_vulnerable = self.scenario.is_statically_vulnerable
         self.has_been_run = bool(self.log_id)
@@ -41,7 +50,8 @@ class DynamicAnalysisResult:
             'crashed_on_setup': self.crashed_on_setup,
             'is_statically_vulnerable': self.is_statically_vulnerable,
             'has_been_run': self.has_been_run,
-            'is_running': self.is_running}
+            'is_running': self.is_running,
+            'timed_out': self.timed_out}
 
 
 def analyze_dynamically(apk_name, scenarios, smart_input_results, smart_input_assignment, task=None):
@@ -72,6 +82,10 @@ def analyze_dynamically(apk_name, scenarios, smart_input_results, smart_input_as
             smart_input_assignment,
             emulator_id,
             task)
+    except SoftTimeLimitExceeded as e:
+        logger.exception("Timed out")
+        log_analysis_results = analyse_logs([DynamicAnalysisResult(s, timed_out=True)
+                                             for s in scenarios.scenarios])
     except Exception as e:
         logger.exception("Crash during setup")
         log_analysis_results = analyse_logs([DynamicAnalysisResult(s, crashed_on_setup=True)
@@ -148,7 +162,7 @@ def run_scenarios(scenarios, smart_input_results, smart_input_assignment, emulat
 def run_scenario(scenario, log_id, emulator_id, smart_input_results, smart_input_assignment):
     installed_certificate_names = list()
     mitm_proxy_process = None
-    # network_monitor_process = None
+    network_monitor_process = None
     try:
         # ==== Setup ====
         if scenario.scenario_settings.sys_certificates:
@@ -160,7 +174,11 @@ def run_scenario(scenario, log_id, emulator_id, smart_input_results, smart_input
             scenario.scenario_settings.add_upstream_certs,
             log_id)
 
-        # network_monitor_process = start_network_monitor(emulator_id, static_analysis_results.package, log_id)
+        if scenario.scenario_settings.strace:
+            network_monitor_process = start_network_monitor(
+                emulator_id,
+                scenario.static_analysis_results.package,
+                log_id)
         # ==== ===== ====
 
         run_ui_traversal(scenario, emulator_id, smart_input_results, smart_input_assignment)
@@ -168,6 +186,9 @@ def run_scenario(scenario, log_id, emulator_id, smart_input_results, smart_input
         time.sleep(5)  # wait before shutting down mitmproxy since there might be a last request caused by ui traversal
 
         return analyse_logs([DynamicAnalysisResult(scenario, log_id)])
+    except SoftTimeLimitExceeded as e:
+        logger.exception("Timed out")
+        return analyse_logs([DynamicAnalysisResult(scenario, log_id, timed_out=True)])
     except Exception as e:
         logger.exception("Crash during running scenario")
         return analyse_logs([DynamicAnalysisResult(scenario, log_id, crashed_on_run=True)])
@@ -176,8 +197,8 @@ def run_scenario(scenario, log_id, emulator_id, smart_input_results, smart_input
         for name in installed_certificate_names:
             uninstall_system_certificate(emulator_id, name)
 
-        # if network_monitor_process
-        #   kill_network_monitor(network_monitor_process)
+        if network_monitor_process:
+            kill_network_monitor(network_monitor_process)
         if mitm_proxy_process:
             kill_mitm_proxy(mitm_proxy_process)
         # ==== ======== ====
@@ -192,8 +213,9 @@ def run_ui_traversal(scenario, emulator_id, smart_input_results, smart_input_ass
 
     start_activity(emulator_id, scenario.activity_name)
 
-    time.sleep(5)  # wait for starting activity
+    time.sleep(5)
 
+    # TODO: if there is a problem here, there seems to be no exception to catch
     device, serialno = ViewClient.connectToDeviceOrExit(serialno=emulator_id)
     vc = ViewClient(device, serialno)
 
@@ -279,7 +301,7 @@ def press_enter(emulator_id):
 def start_activity(emulator_id, meth_nm):
     last_dot = meth_nm.rindex('.')
     component_name = meth_nm[:last_dot] + "/" + meth_nm[last_dot:]
-    cmd = "adb -s " + emulator_id + " shell am start -n " + component_name
+    cmd = "adb -s " + emulator_id + " shell am start -W -n " + component_name
     logger.debug(cmd)
     subprocess.check_call(cmd, shell=True)
 

@@ -21,7 +21,7 @@
         <input type="checkbox" class="form-control" id="enabled" name="enabled" style="width: 33px"
                {% if sc.enabled %}checked{% endif %}>
 
-        <label for="vuln_type">For custom implementations of</label>
+        <label for="vuln_type">Vulnerability type</label>
         <select class="form-control" id="vuln_type"  name="vuln_type" {% if sc.is_default %}disabled{% endif %}>
             <option></option>
             {% for vuln_type in vuln_types %}
@@ -69,6 +69,11 @@
         <label for="report_http">Report HTTP traffic</label>
         <input type="checkbox" class="form-control" id="report_http" name="report_http" style="width: 33px"
                {% if sc.report_http %}checked{% endif %}
+               {% if sc.is_default %}disabled{% endif %}>
+
+        <label for="strace">Limit reported intercepted HTTP/S traffic to app traffic (via strace)</label>
+        <input type="checkbox" class="form-control" id="strace" name="strace" style="width: 33px"
+               {% if sc.strace %}checked{% endif %}
                {% if sc.is_default %}disabled{% endif %}>
     </form>
 

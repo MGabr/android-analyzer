@@ -32,7 +32,9 @@ def context_processor():
             return "glyphicon glyphicon-ok text-success"
 
     def glyphicon_for_dynamic_result(r):
-        if r.is_vulnerable():
+        if r.timed_out():
+            return "glyphicon glyphicon-time text-muted"
+        elif r.is_vulnerable():
             return "glyphicon glyphicon-alert text-danger"
         elif r.dynamic_analysis_running():
             return "glyphicon glyphicon-hourglass text-muted"
@@ -132,7 +134,9 @@ def context_processor():
         return display_nl_joined(connected_hosts or []) or ""
 
     def connected_hostnames_tooltiptitle_for_result(r):
-        if r.dynamic_analysis_running():
+        if r.timed_out():
+            return "Analysis has timed out"
+        elif r.dynamic_analysis_running():
             return "App is currently analysed"
         elif r.is_vulnerable():
             return "App successfully attacked!"
@@ -145,7 +149,9 @@ def context_processor():
 
     # TODO: more detailed error message if only statically vulnerable
     def connected_hostnames_tooltip_for_result(r, srv):
-        if r.dynamic_analysis_running():
+        if r.timed_out():
+            return "Dynamic analysis has timed out"
+        elif r.dynamic_analysis_running():
             return "The app is currently analysed dynamically"
         elif r.is_vulnerable():
             return '''

@@ -91,6 +91,9 @@ class ScenarioResultView:
     def crashed_on_setup(self):
         return self.log_analysis_result and self.log_analysis_result.dynamic_analysis_result.crashed_on_setup
 
+    def timed_out(self):
+        return self.log_analysis_result and self.log_analysis_result.dynamic_analysis_result.timed_out
+
 
 def render_all_scenario_settings():
     srvs = list()

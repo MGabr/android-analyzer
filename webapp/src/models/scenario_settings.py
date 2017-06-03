@@ -21,6 +21,7 @@ class ScenarioSettings(db.Model):
     is_default = db.Column(db.Boolean, default=True)
     enabled = db.Column(db.Boolean, default=True)
     report_http = db.Column(db.Boolean, default=True)
+    strace = db.Column(db.Boolean, default=False)
     add_upstream_certs = db.Column(db.Boolean, default=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.username'))
     user = db.relationship('User', back_populates='scenarios')
@@ -43,5 +44,6 @@ class ScenarioSettings(db.Model):
             'is_default': self.is_default,
             'enabled': self.enabled,
             'report_http': self.report_http,
+            'strace': self.strace,
             'add_upstream_certs': self.add_upstream_certs,
             'user': self.user}

@@ -18,9 +18,10 @@ class Logger:
 
         if flow.client_conn.tls_established:
             with open(self.logfile, "a") as logfile:
-                logfile.write("host: " + flow.request.pretty_host + "\n")
+                logfile.write("host: " + flow.request.pretty_host + ",ip: " + flow.server_conn.ip_address.host + "\n")
                 logfile.write("url: " + flow.request.pretty_url + "\n")
-        elif flow.request.scheme == "http":
+        elif flow.server_conn.protocol == "http":
             with open(self.logfile, "a") as logfile:
-                logfile.write("http host: " + "http://" + flow.request.pretty_host + "\n")
+                logfile.write("http host: " + "http://" + flow.request.pretty_host +
+                              ",ip: " + flow.server_conn.ip_address.host + "\n")
                 logfile.write("http url: " + "http://" + flow.request.pretty_url + "\n")
