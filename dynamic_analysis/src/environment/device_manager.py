@@ -7,33 +7,34 @@ logger = logging.getLogger(__name__)
 
 
 class DeviceManager:
-    running_emulators = dict()
-    next_port = 5554
+    port = "5554"
+    emulator_id = "emulator-" + port
+    is_running = False
 
     @classmethod
     def get_emulator(cls, min_sdk_version, target_sdk_version):
         api = _get_fitting_sdk_version(min_sdk_version, target_sdk_version)
 
-        if api in cls.running_emulators:
-            return cls.running_emulators[api]
-
         # TODO: maybe use -gpu on
         no_audio = "export QEMU_AUDIO_DRV=none && "
         emulator_type = str(api)
-        port = str(cls.next_port)
         other_opts = "-wipe-data -use-system-libs -writable-system -no-boot-anim -http-proxy http://0.0.0.0:8080"
 
-        cmd = no_audio + "emulator -avd " + emulator_type + " -port " + port + " " + other_opts + "  &"
+        cmd = no_audio + "emulator -avd " + emulator_type + " -port " + cls.port + " " + other_opts + "  &"
         logger.debug(cmd)
         subprocess.check_call(cmd, shell=True)
 
-        emulator_id = "emulator-" + port
-        _wait_until_boot_completed(emulator_id)
+        _wait_until_boot_completed(cls.emulator_id)
+        cls.is_running = True
 
-        cls.running_emulators[api] = emulator_id
-        cls.next_port += 2
+        return cls.emulator_id
 
-        return emulator_id
+    @classmethod
+    def shutdown_emulator(cls):
+        if cls.is_running:
+            cmd = "adb -s " + cls.emulator_id + " emu kill"
+            logger.debug(cmd)
+            subprocess.check_call(cmd, shell=True)
 
 
 def _get_fitting_sdk_version(min_sdk_version, target_sdk_version):
@@ -61,9 +62,3 @@ def _wait_until_boot_completed(emulator_id):
     while "1" not in subprocess.check_output(cmd, shell=True):
         time.sleep(1)
         logger.debug(cmd)
-
-
-def return_emulator(emulator_id):
-    # TODO: not working because of telnet auth token
-    cmd = "adb -s " + emulator_id + " emu kill"
-    subprocess.call(cmd, shell=True)

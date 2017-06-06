@@ -95,7 +95,9 @@ def analyze_dynamically(apk_name, scenarios, smart_input_results, smart_input_as
         if installed:
             uninstall_apk(emulator_id, common_static_analysis_results.package)
 
-        # TODO: shutdown emulator?
+        DeviceManager.shutdown_emulator()
+
+        time.sleep(5) # wait for emulator to be shut down
         # ==== ======== ====
 
     log_analysis_results += analyse_logs([DynamicAnalysisResult(solved_scenario)
@@ -167,6 +169,9 @@ def run_scenario(scenario, log_id, emulator_id, smart_input_results, smart_input
         # ==== Setup ====
         if scenario.scenario_settings.sys_certificates:
             for sys_certificate in scenario.scenario_settings.sys_certificates:
+                logger.debug("sys_certificate: " + str(sys_certificate))
+                logger.debug("sys_certificate custom_ca: " + str(sys_certificate))
+                logger.debug("sys_certificate name: " + str(sys_certificate.name))  # untrusted mitmproxy CA
                 installed_certificate_names += [install_as_system_certificate(emulator_id, sys_certificate)]
 
         mitm_proxy_process = start_mitm_proxy(
