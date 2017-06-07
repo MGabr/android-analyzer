@@ -10,11 +10,11 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-celery = Celery(broker='amqp://admin:mypass@rabbit//', backend='rpc://')
+celery = Celery(broker='amqp://admin:mypass@rabbit//', backend='file:///files/tmp/celery_results')
 celery.conf.update()
 
 
-@celery.task(bind=True, name='dynamic_analysis_task')
+@celery.task(bind=True, name='dynamic_analysis_task', default_retry_delay=60,max_retries=1,soft_time_limit=600)
 def dynamic_analysis_task(self, apk_name, scenarios, smart_input_results, smart_input_assignment):
     log_analysis_results = analyze_dynamically(
         apk_name,

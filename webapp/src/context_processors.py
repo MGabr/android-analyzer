@@ -1,3 +1,18 @@
+
+def subresultrow_id_for_result(srv, r):
+    activity_name = "-" + r.activity_name() if r and r.activity_name() else ""
+    return "subresultrow" + str(srv.scenario_settings.id) + "-" + str(srv.apk_filename) + activity_name
+
+
+def resultrow_id_for_result(srv, r):
+    activity_name = "-" + r.activity_name() if r and r.activity_name() else ""
+    return "resultrow" + str(srv.scenario_settings.id) + "-" + str(srv.apk_filename) + activity_name
+
+
+def activityselect_id_for_result(srv, r):
+    return "aselect" + str(srv.scenario_settings.id) + "-" + str(srv.apk_filename) + "-" + r.activity_name()
+
+
 def context_processor():
 
     def display_comma_joined(set):
@@ -38,10 +53,10 @@ def context_processor():
             return "glyphicon glyphicon-alert text-danger"
         elif r.dynamic_analysis_running():
             return "glyphicon glyphicon-hourglass text-muted"
-        elif r.is_statically_vulnerable():
-            return "glyphicon glyphicon-ok text-success"
         elif r.crashed_on_run() or r.crashed_on_setup():
             return "glyphicon glyphicon-fire text-muted"
+        elif r.is_statically_vulnerable():
+            return "glyphicon glyphicon-ok text-success"
         else:
             return "glyphicon glyphicon-minus text-muted"
 
@@ -91,23 +106,12 @@ def context_processor():
             Vulnerabilities due to custom implementations of this class can be ruled out.
             '''.format(clazz=_vulntype_for_result(srv))
 
-    def subresultrow_id_for_result(srv, r):
-        activity_name = "-" + r.activity_name() if r else ""
-        return "subresultrow" + str(srv.scenario_settings.id) + activity_name
-
-    def resultrow_id_for_result(srv, r):
-        activity_name = "-" + r.activity_name() if r else ""
-        return "resultrow" + str(srv.scenario_settings.id) + activity_name
-
     def resultrow_class_for_result(srv):
-        return "resultrow" + str(srv.scenario_settings.id)
-
-    def activityselect_id_for_result(srv, r):
-        return "aselect" + str(srv.scenario_settings.id) + "-" + r.activity_name()
+        return "resultrow" + str(srv.scenario_settings.id) + "-" + str(srv.apk_filename)
 
     def activityselect_class_for_result(srv):
         if srv.has_activity_to_select():
-            return "aselect" + str(srv.scenario_settings.id)
+            return "aselect" + str(srv.scenario_settings.id) + "-" + str(srv.apk_filename)
         return ""
 
     def _display_connected_hostnames(r):

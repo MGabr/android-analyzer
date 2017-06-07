@@ -83,13 +83,18 @@ def show_certificate(id):
 
 @app.route('/static_analysis', methods=['POST'])
 def start_static_analysis():
-    if 'apk' in request.files:
-        filename = apks.save(request.files['apk'])
-        filename = filename.replace('.apk', '')
-        task = celery.send_task('static_analysis_task', args=[filename])
+    if 'apks' in request.files:
+        filenames = []
+        for file in request.files.getlist('apks'):
+            filenames += [apks.save(file).replace('.apk', '')]
 
-        html = result_view_service.render_all_scenario_settings()
-        return _json_poll_redirect(url_for('get_static_analysis', id=task.id), html=html)
+        tasks = []
+        for filename in filenames:
+            tasks += [celery.send_task('static_analysis_task', args=[filename])]
+
+        html = result_view_service.render_all_scenario_settings(filenames)
+
+        return _json_poll_redirects([url_for('get_static_analysis', id=task.id) for task in tasks], html=html)
     else:
         return jsonify({'error': True})
 
@@ -169,6 +174,8 @@ def get_dynamic_analysis(id):
     r = DictObject(task.result)
     if not r.get('log_analysis_results'):
         return jsonify({})
+
+    task.forget()
 
     result = dict()
     result['html'] = result_view_service.render_log_analysis_results(r.log_analysis_results)
@@ -264,6 +271,12 @@ def _json_poll_redirect(url, html=None):
     if html:
         return jsonify({'poll_redirect': url, 'html': html})
     return jsonify({'poll_redirect': url})
+
+
+def _json_poll_redirects(urls, html=None):
+    if html:
+        return jsonify({'poll_redirects': urls, 'html': html})
+    return jsonify({'poll_redirects': urls})
 
 
 # ---- Error handlers ----

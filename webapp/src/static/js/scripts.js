@@ -33,6 +33,9 @@ $(document).ready(function(){
         });
     }
 
+    // to adjust the polling duration for more apks, more apks -> more different, but fewer calls
+    var uploadedApkCount = 0;
+
     // upload apk / start static analysis on server asynchronously
     // render first full result page
     // start polling static analysis
@@ -53,13 +56,13 @@ $(document).ready(function(){
 
                 if (data.error) {
                     // TODO: handle error
-                } else if (data.poll_redirect) {
-
+                } else if (data.poll_redirects) {
                     $("html").html(data.html);
 
-                    setTimeout(function () {
-                        pollStaticAnalysis(data.poll_redirect)
-                    }, 10 * 1000);
+                    uploadedApkCount = Math.min(data.poll_redirects.length, 10);
+                    for (var index in data.poll_redirects) {
+                        doSetPollStaticAnalysisTimeout(data, index);
+                    }
                 }
             },
             error: function (data) {
@@ -67,6 +70,12 @@ $(document).ready(function(){
                 // TODO: handle error
             }
         });
+    }
+
+    function doSetPollStaticAnalysisTimeout(data, index) {
+        setTimeout(function () {
+            pollStaticAnalysis(data.poll_redirects[index])
+        }, 10 * uploadedApkCount * 1000);
     }
 
     // poll static analysis asynchronously
@@ -91,7 +100,7 @@ $(document).ready(function(){
                 } else {
                     setTimeout(function () {
                         pollStaticAnalysis(poll_redirect);
-                    }, 10 * 1000);
+                    }, 10 * uploadedApkCount * 1000);
                 }
 
             },
@@ -116,7 +125,7 @@ $(document).ready(function(){
                 if (data.poll_redirect) {
                     setTimeout(function () {
                         pollDynamicAnalysis(data.poll_redirect)
-                    }, 10 * 1000);
+                    }, 25 * uploadedApkCount * 1000);
                 }
 
             },
@@ -143,7 +152,7 @@ $(document).ready(function(){
                 if (!data.finished) {
                     setTimeout(function () {
                         pollDynamicAnalysis(poll_redirect);
-                    }, 10 * 1000);
+                    }, 25 * uploadedApkCount * 1000);
                 }
             },
             error: function (data) {
@@ -191,11 +200,14 @@ $(document).ready(function(){
         var activities = $("." + aselect_class);
         var selected = activities.filter(".aselected");
         var discarded = activities.filter(".adiscarded");
+        console.log("activities length: " + activities.length);
+        console.log("selected length: " + selected.length);
+        console.log("discarded length: " + discarded.length);
         var num_undecided = activities.length - selected.length - discarded.length;
         if (num_undecided == 0) {
             scenario_settings_id = aselect_id.split('aselect')[1].split('-')[0];
             selected_names = selected.map(function () {
-                return this.id.split('aselect')[1].split('-')[1];
+                return this.id.substring(this.id.lastIndexOf('-') + 1, this.id.length);
             });
 
             $.ajax({
@@ -212,7 +224,7 @@ $(document).ready(function(){
                     if (data.poll_redirect) {
                         setTimeout(function () {
                             pollDynamicAnalysis(data.poll_redirect)
-                        }, 10 * 1000);
+                        }, 25 * uploadedApkCount * 1000);
                     }
 
                 },
@@ -234,7 +246,7 @@ $(document).ready(function(){
                 }
 
                 if (id.startsWith("resultrow")) {
-                    var resultrow_class = id.split('-')[0];
+                    var resultrow_class = id.substring(0, id.lastIndexOf('-'));
                     if ($("#" + resultrow_class).length) {
                         // replace result row with result row containing subresult id (with activity name)
                         $("#" + resultrow_class).replaceWith(data.html[id]);
@@ -254,7 +266,7 @@ $(document).ready(function(){
                         $(document.getElementById(id)).replaceWith(data.html[id]);
                     } else if (!$(document.getElementById(id.replace("subresultrow", "resultrow"))).length) {
                         // insert after result row
-                        var resultrow_class = id.replace("subresultrow", "resultrow").split('-')[0];
+                        var resultrow_class = id.substring(0, id.lastIndexOf('-')).replace("subresultrow", "resultrow");
                         $("." + resultrow_class).after(data.html[id]);
                     }
                     // else: this is not a subresult row, only redundant data, since server doesn't know

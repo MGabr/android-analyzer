@@ -11,7 +11,7 @@
             <form id="analysis-form" enctype="multipart/form-data">
                 <label class="btn btn-lg btn-success btn-file" role="btn">
                     Upload and analyze APK file
-                    <input id="analysis-btn" type="file" name="apk" style="display: none;"
+                    <input id="analysis-btn" type="file" name="apks" style="display: none;" multiple
                            ajax-form="analysis-form" ajax-method="POST" ajax-url="{{ url_for('start_static_analysis') }}">
                 </label>
             </form>

@@ -9,7 +9,8 @@ sys.setrecursionlimit(40000)
 
 
 class StaticAnalysisResults:
-    def __init__(self, package, min_sdk_version, target_sdk_version, result_list):
+    def __init__(self, apk_filename, package, min_sdk_version, target_sdk_version, result_list):
+        self.apk_filename = apk_filename
         self.package = package
         self.min_sdk_version = min_sdk_version
         self.target_sdk_version = target_sdk_version
@@ -17,6 +18,7 @@ class StaticAnalysisResults:
 
     def __json__(self):
         return {
+            'apk_filename': self.apk_filename,
             'package': self.package,
             'min_sdk_version': self.min_sdk_version,
             'target_sdk_version': self.target_sdk_version,
@@ -244,7 +246,7 @@ class StaticAnalyzer:
         return package, min_sdk_version, target_sdk_version or platform_build_version_code
 
     # Analyses the decoded APK in the given path and returns a list of ???
-    def analyze_statically(self, apk_path):
+    def analyze_statically(self, apk_path, apk_filename):
         package, min_sdk_version, target_sdk_version = self.parse_manifest(apk_path)
         self.process_apk(apk_path)
 
@@ -256,4 +258,4 @@ class StaticAnalyzer:
 
         results = list(set(results))  # eliminate duplicates
 
-        return StaticAnalysisResults(package, min_sdk_version, target_sdk_version, results)
+        return StaticAnalysisResults(apk_filename, package, min_sdk_version, target_sdk_version, results)

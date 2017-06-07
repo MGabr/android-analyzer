@@ -20,10 +20,11 @@ apks = UploadSet('apks', ('apk',))
 configure_uploads(app, (apks,))
 
 app.config['CELERY_BROKER_URL'] = 'amqp://admin:mypass@rabbit//'
-app.config['CELERY_RESULT_BACKEND'] = 'rpc://'
+app.config['CELERY_RESULT_BACKEND'] = 'file:///files/tmp/celery_results'
 app.config['CELERY_ROUTES'] = {
     'static_analysis_task': {'queue': 'static_queue'},
     'dynamic_analysis_task': {'queue': 'dynamic_queue'}}
+app.config['CELERYD_PREFETCH_MULTIPLIER'] = 1
 
 
 def make_celery(app):

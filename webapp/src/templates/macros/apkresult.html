@@ -1,0 +1,31 @@
+{% import "macros/resultrow.html" as r with context %}
+{% macro apk_result(apk_res) -%}
+<div class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h5>
+                <a data-toggle="collapse"
+                   href="#collapse{{ apk_res.apk_filename }}">Analysis of APK file {{ apk_res.apk_filename }}</a>
+            </h5>
+        </div>
+        <div id="collapse{{ apk_res.apk_filename }}" class="panel-collapse collapse">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Scenario</th>
+                    <th>Scenario Info</th>
+                    <th colspan="2">Static Analysis</th>
+                    <th>Activities</th>
+                    <th colspan="2">Dynamic Analysis</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for result in apk_res.scenario_settings_result_views %}
+                    {{ r.result_row(result, None) }}
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{%- endmacro %}

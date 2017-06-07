@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-celery = Celery(broker='amqp://admin:mypass@rabbit//', backend='rpc://')
+celery = Celery(broker='amqp://admin:mypass@rabbit//', backend='file:///files/tmp/celery_results')
 celery.conf.update()
 
 
@@ -26,11 +26,12 @@ def static_analysis_task(self, apk_name):
             state='PROGRESS',
             meta={'msg_done': 'Disassembled APK.', 'msg_currently': 'Now statically analysing app.'})
 
-        static_analysis_results = StaticAnalyzer().analyze_statically(disassembled_path)
+        static_analysis_results = StaticAnalyzer().analyze_statically(disassembled_path, apk_name)
 
         activities = GetApkActivities(apk_name).get_all_activities()
 
         static_analysis_results = StaticAnalysisResults(
+            static_analysis_results.apk_filename,
             static_analysis_results.package,
             static_analysis_results.min_sdk_version,
             static_analysis_results.target_sdk_version,

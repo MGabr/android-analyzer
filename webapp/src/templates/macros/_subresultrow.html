@@ -1,5 +1,6 @@
 {% macro get_subresult_row(result, rv) -%}
 {% if rv %}
+    {% if rv.activity_name() %}
     <td id="{{ activityselect_id_for_result(result, rv) }}" class="{{ activityselect_class_for_result(result) }}">
         {{ rv.activity_name()}}
         {% if rv.is_activity_to_select() %}
@@ -7,6 +8,9 @@
         <span class="glyphicon glyphicon-small glyphicon-remove-sign clickable span-discard"></span>
         {% endif %}
     </td>
+    {% else %}
+    <td></td>
+    {% endif %}
     <td>
         {% if not rv.is_activity_to_select() %}
         <span class="{{ glyphicon_for_dynamic_result(rv) }} clickable"

@@ -5,8 +5,9 @@ from src.models.vuln_type import VulnType
 class Scenario:
     # if there is no corresponding static analysis result / the dynamic analysis does not need to be run
     # activity_name and static_analysis_results should not be set
-    def __init__(self, scenario_settings, activity_name=None, static_analysis_results=None):
+    def __init__(self, scenario_settings, apk_filename, activity_name=None, static_analysis_results=None):
         self.scenario_settings = scenario_settings
+        self.apk_filename = apk_filename
         self.activity_name = activity_name
         self.static_analysis_results = static_analysis_results
 
@@ -15,6 +16,7 @@ class Scenario:
     def __json__(self):
         return {
             'scenario_settings': self.scenario_settings,
+            'apk_filename': self.apk_filename,
             'activity_name': self.activity_name,
             'static_analysis_results': self.static_analysis_results,
             'is_statically_vulnerable': self.is_statically_vulnerable}
@@ -30,7 +32,8 @@ class Scenarios:
 
 
 class StaticAnalysisResults:
-    def __init__(self, package, min_sdk_version, target_sdk_version, result_list):
+    def __init__(self, apk_filename, package, min_sdk_version, target_sdk_version, result_list):
+        self.apk_filename = apk_filename
         self.package = package
         self.min_sdk_version = min_sdk_version
         self.target_sdk_version = target_sdk_version
@@ -38,6 +41,7 @@ class StaticAnalysisResults:
 
     def __json__(self):
         return {
+            'apk_filename': self.apk_filename,
             'package': self.package,
             'min_sdk_version': self.min_sdk_version,
             'target_sdk_version': self.target_sdk_version,
@@ -47,6 +51,7 @@ class StaticAnalysisResults:
 def get_for_choosen_activities_and_settings(static_analysis_results, choosen_activities, scenario_settings_id):
     filtered_result_list = [r for r in static_analysis_results.result_list if r.meth_nm in choosen_activities]
     filtered_results = StaticAnalysisResults(
+        static_analysis_results.apk_filename,
         static_analysis_results.package,
         static_analysis_results.min_sdk_version,
         static_analysis_results.target_sdk_version,
@@ -59,6 +64,7 @@ def get_all_of_user(static_analysis_results):
     filtered_result_list = [r for r in static_analysis_results.result_list
                             if r.vuln_type.value != VulnType.selected_activities.value]
     filtered_results = StaticAnalysisResults(
+        static_analysis_results.apk_filename,
         static_analysis_results.package,
         static_analysis_results.min_sdk_version,
         static_analysis_results.target_sdk_version,
@@ -81,14 +87,19 @@ def _get_of(static_analysis_results, scenario_settings):
             for activity_name in {result.meth_nm for result in matching}:
                 combined_result_list = [result for result in matching if result.meth_nm == activity_name]
                 combined_results = StaticAnalysisResults(
+                    static_analysis_results.apk_filename,
                     static_analysis_results.package,
                     static_analysis_results.min_sdk_version,
                     static_analysis_results.target_sdk_version,
                     combined_result_list)
-                scenarios += [Scenario(scenario_setting, activity_name, combined_results)]
+                scenarios += [Scenario(
+                    scenario_setting,
+                    static_analysis_results.apk_filename,
+                    activity_name,
+                    combined_results)]
         else:
             # there is no static analysis result with the right vulnerability type for this scenario
             # -> dynamic analysis is not required
-            solved_scenarios += [Scenario(scenario_setting)]
+            solved_scenarios += [Scenario(scenario_setting, static_analysis_results.apk_filename)]
 
     return Scenarios(scenarios, solved_scenarios)

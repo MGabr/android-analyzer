@@ -1,0 +1,15 @@
+{% import "macros/apkresult.html" as r with context %}
+{% include "partials/head.html" %}
+<body>
+
+<div class="container">
+    {% include "partials/header.html" %}
+
+    <div>
+        {% for apk_r in apk_results %}
+            {{ r.apk_result(apk_r) }}
+        {% endfor %}
+    </div>
+</div>
+
+</body>

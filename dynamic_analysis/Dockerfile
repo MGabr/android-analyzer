@@ -70,4 +70,4 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-ENTRYPOINT celery worker -A src.task.celery -Q dynamic_queue --loglevel=info -Ofair --concurrency=1 --soft-time-limit 600
+ENTRYPOINT celery worker -A src.task.celery -Q dynamic_queue --loglevel=info -Ofair --concurrency=1

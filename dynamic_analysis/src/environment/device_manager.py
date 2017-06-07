@@ -32,6 +32,7 @@ class DeviceManager:
     @classmethod
     def shutdown_emulator(cls):
         if cls.is_running:
+            cls.is_running = False
             cmd = "adb -s " + cls.emulator_id + " emu kill"
             logger.debug(cmd)
             subprocess.check_call(cmd, shell=True)

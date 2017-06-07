@@ -1,10 +1,18 @@
 from src.models.vuln_type import VulnType
 from src.services import scenario_settings_service
 from flask import render_template
+from src.context_processors import resultrow_id_for_result, subresultrow_id_for_result
+
+
+class ApkResultView:
+    def __init__(self, apk_filename, scenario_settings_result_views):
+        self.apk_filename = apk_filename
+        self.scenario_settings_result_views = scenario_settings_result_views
 
 
 class ScenarioSettingsResultView:
-    def __init__(self, scenario_settings, scenario_result_views=None, _static_analysis_running=False):
+    def __init__(self, scenario_settings, apk_filename, scenario_result_views=None, _static_analysis_running=False):
+        self.apk_filename = apk_filename
         self.scenario_settings = scenario_settings
         self.scenario_result_views = scenario_result_views or []
         self._static_analysis_running = _static_analysis_running
@@ -95,13 +103,16 @@ class ScenarioResultView:
         return self.log_analysis_result and self.log_analysis_result.dynamic_analysis_result.timed_out
 
 
-def render_all_scenario_settings():
-    srvs = list()
+def render_all_scenario_settings(filenames):
     scenarios = scenario_settings_service.get_all_enabled_of_user()
-    for s in scenarios:
-        srvs += [ScenarioSettingsResultView(s, _static_analysis_running=True)]
+    arvs = list()
+    for f in filenames:
+        srvs = list()
+        for s in scenarios:
+            srvs += [ScenarioSettingsResultView(s, f, _static_analysis_running=True)]
+        arvs += [ApkResultView(f, srvs)]
 
-    full_html = render_template('results.html', results=srvs)
+    full_html = render_template('apkresults.html', apk_results=arvs)
     return full_html
 
 
@@ -113,25 +124,26 @@ def render_static_analysis_results(static_analysis_results):
         rvs = [ScenarioResultView(static_analysis_result=r,
                                   _dynamic_analysis_running=r.vuln_type.value != VulnType.selected_activities.value)
                for r in result_list_for_s]
-        srvs += [ScenarioSettingsResultView(s, scenario_result_views=rvs)]
+        srvs += [ScenarioSettingsResultView(s, static_analysis_results.apk_filename, scenario_result_views=rvs)]
 
     return _html_dict(srvs, only_first_as_resultrow=True)
 
 
 def render_selected_activities(scenarios, scenario_settings_id):
-    flatten = lambda l: [item for sublist in l for item in sublist]
+    apk_filename = scenarios.scenarios[0].apk_filename
 
-    results = flatten([r.result_list for r in [s.static_analysis_results for s in scenarios.scenarios]])
-
-    srvs = list()
     scenario = scenario_settings_service.get_of_user(scenario_settings_id)
+
+    flatten = lambda l: [item for sublist in l for item in sublist]
+    results = flatten([r.result_list for r in [s.static_analysis_results for s in scenarios.scenarios]])
     result_list_for_s = [r for r in results
                          if r.vuln_type.value == VulnType.selected_activities.value]
     rvs = [ScenarioResultView(static_analysis_result=r,
                               activity_selected=True,
                               _dynamic_analysis_running=True)
            for r in result_list_for_s]
-    srvs += [ScenarioSettingsResultView(scenario, scenario_result_views=rvs)]
+
+    srvs = [ScenarioSettingsResultView(scenario, apk_filename, scenario_result_views=rvs)]
 
     return _html_dict(srvs, only_first_as_resultrow=True)
 
@@ -142,7 +154,8 @@ def render_log_analysis_results(log_analysis_results):
         log_analysis_results_for_s = [r for r in log_analysis_results
                                       if r.dynamic_analysis_result.scenario.scenario_settings.id == s.id]
         rvs = [ScenarioResultView(log_analysis_result=r) for r in log_analysis_results_for_s]
-        srvs += [ScenarioSettingsResultView(s, scenario_result_views=rvs)]
+        apk_filename = log_analysis_results_for_s[0].dynamic_analysis_result.scenario.apk_filename
+        srvs += [ScenarioSettingsResultView(s, apk_filename, scenario_result_views=rvs)]
 
     return _html_dict(srvs)
 
@@ -153,14 +166,14 @@ def _html_dict(srvs, only_first_as_resultrow=False):
 
         for index, r in enumerate(srv.scenario_result_views):
             if not only_first_as_resultrow or index == 0:
-                result_row_id = "resultrow" + str(srv.scenario_settings.id) + "-" + r.activity_name()
+                result_row_id = resultrow_id_for_result(srv, r)
                 html[result_row_id] = render_template('partials/resultrow.html', results=srv, result=r)
             if not only_first_as_resultrow or index > 0:
-                subresult_row_id = "subresultrow" + str(srv.scenario_settings.id) + "-" + r.activity_name()
+                subresult_row_id = subresultrow_id_for_result(srv, r)
                 html[subresult_row_id] = render_template('partials/subresultrow.html', results=srv, result=r)
 
         if not srv.scenario_result_views:
-            result_row_id = "resultrow" + str(srv.scenario_settings.id)
+            result_row_id = resultrow_id_for_result(srv, None)
             html[result_row_id] = render_template('partials/resultrow.html', results=srv, result=None)
 
     html["single_resultrow"] = only_first_as_resultrow
