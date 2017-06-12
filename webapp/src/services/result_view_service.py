@@ -59,25 +59,23 @@ class ScenarioResultView:
 
     def activity_name(self):
         if self.log_analysis_result:
-            return self.log_analysis_result.dynamic_analysis_result.scenario.activity_name
+            return self.log_analysis_result.dynamic_analysis_result.scenario.static_analysis_result.activity_name
         if self.static_analysis_result:
-            return self.static_analysis_result.meth_nm
+            return self.static_analysis_result.activity_name
         return None
 
     def is_vulnerable(self):
         return self.log_analysis_result and self.log_analysis_result.is_vulnerable
 
     def is_statically_vulnerable(self):
-        if self.static_analysis_result:
-            return True
-        return self.log_analysis_result and self.log_analysis_result.is_statically_vulnerable
+        return self.static_analysis_result or self.log_analysis_result
 
     def is_selected_activity(self):
         if self.activity_selected:
             return True
-        if self.log_analysis_result and self.log_analysis_result.is_statically_vulnerable:
-            result_list = self.log_analysis_result.dynamic_analysis_result.scenario.static_analysis_results.result_list
-            return bool([r for r in result_list if r.vuln_type.value == VulnType.selected_activities.value])
+        if self.log_analysis_result:
+            vuln_type = self.log_analysis_result.dynamic_analysis_result.scenario.static_analysis_result.vuln_type.value
+            return  vuln_type == VulnType.selected_activities.value
         return False
 
     def is_activity_to_select(self):
@@ -116,7 +114,7 @@ def render_all_scenario_settings(filenames):
     return full_html
 
 
-def render_static_analysis_results(static_analysis_results):
+def render_static_analysis_results(static_analysis_results, html):
     srvs = list()
     scenarios = scenario_settings_service.get_all_enabled_of_user()
     for s in scenarios:
@@ -126,12 +124,10 @@ def render_static_analysis_results(static_analysis_results):
                for r in result_list_for_s]
         srvs += [ScenarioSettingsResultView(s, static_analysis_results.apk_filename, scenario_result_views=rvs)]
 
-    return _html_dict(srvs, only_first_as_resultrow=True)
+    return _html_dict(srvs, html, only_first_as_resultrow=True)
 
 
-def render_selected_activities(scenarios, scenario_settings_id):
-    apk_filename = scenarios.scenarios[0].apk_filename
-
+def render_selected_activities(scenarios, scenario_settings_id, html):
     scenario = scenario_settings_service.get_of_user(scenario_settings_id)
 
     flatten = lambda l: [item for sublist in l for item in sublist]
@@ -143,12 +139,12 @@ def render_selected_activities(scenarios, scenario_settings_id):
                               _dynamic_analysis_running=True)
            for r in result_list_for_s]
 
-    srvs = [ScenarioSettingsResultView(scenario, apk_filename, scenario_result_views=rvs)]
+    srvs = [ScenarioSettingsResultView(scenario, scenarios.apk_filename, scenario_result_views=rvs)]
 
-    return _html_dict(srvs, only_first_as_resultrow=True)
+    return _html_dict(srvs, html, only_first_as_resultrow=True)
 
 
-def render_log_analysis_results(log_analysis_results):
+def render_log_analysis_results(log_analysis_results, html):
     srvs = list()
     for s in {r.dynamic_analysis_result.scenario.scenario_settings for r in log_analysis_results}:
         log_analysis_results_for_s = [r for r in log_analysis_results
@@ -157,11 +153,11 @@ def render_log_analysis_results(log_analysis_results):
         apk_filename = log_analysis_results_for_s[0].dynamic_analysis_result.scenario.apk_filename
         srvs += [ScenarioSettingsResultView(s, apk_filename, scenario_result_views=rvs)]
 
-    return _html_dict(srvs)
+    return _html_dict(srvs, html)
 
 
-def _html_dict(srvs, only_first_as_resultrow=False):
-    html = dict()
+def _html_dict(srvs, html, only_first_as_resultrow=False):
+
     for srv in srvs:
 
         for index, r in enumerate(srv.scenario_result_views):
@@ -176,6 +172,7 @@ def _html_dict(srvs, only_first_as_resultrow=False):
             result_row_id = resultrow_id_for_result(srv, None)
             html[result_row_id] = render_template('partials/resultrow.html', results=srv, result=None)
 
+    # TODO: possible error?
     html["single_resultrow"] = only_first_as_resultrow
 
     return html

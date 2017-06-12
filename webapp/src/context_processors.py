@@ -51,10 +51,10 @@ def context_processor():
             return "glyphicon glyphicon-time text-muted"
         elif r.is_vulnerable():
             return "glyphicon glyphicon-alert text-danger"
-        elif r.dynamic_analysis_running():
-            return "glyphicon glyphicon-hourglass text-muted"
         elif r.crashed_on_run() or r.crashed_on_setup():
             return "glyphicon glyphicon-fire text-muted"
+        elif r.dynamic_analysis_running():
+            return "glyphicon glyphicon-hourglass text-muted"
         elif r.is_statically_vulnerable():
             return "glyphicon glyphicon-ok text-success"
         else:

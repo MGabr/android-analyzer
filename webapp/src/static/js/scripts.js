@@ -1,18 +1,5 @@
 $(document).ready(function(){
 
-    $('.text-danger[data-toggle="popover"]').popover({
-        html: true,
-        template: '<div class="popover"><div class="arrow"></div><h3 class="popover-title popover-title-danger"></h3><div class="popover-content"></div></div>'
-    });
-    $('.text-success[data-toggle="popover"]').popover({
-        html: true,
-        template: '<div class="popover"><div class="arrow"></div><h3 class="popover-title popover-title-success"></h3><div class="popover-content"></div></div>'
-    });
-    $('.text-muted[data-toggle="popover"]').popover({
-        html: true,
-        template: '<div class="popover"><div class="arrow"></div><h3 class="popover-title popover-title-muted"></h3><div class="popover-content"></div></div>'
-    });
-
     // for general ajax buttons
     function ajaxButtonClick(e) {
         e.preventDefault();
@@ -33,13 +20,10 @@ $(document).ready(function(){
         });
     }
 
-    // to adjust the polling duration for more apks, more apks -> more different, but fewer calls
-    var uploadedApkCount = 0;
-
-    // upload apk / start static analysis on server asynchronously
+    // upload apk / start (static) analysis on server asynchronously
     // render first full result page
-    // start polling static analysis
-    function ajaxUploadForStaticAnalysis(e) {
+    // start polling analysis
+    function ajaxUploadForAnalysis(e) {
         formName = $(this).attr('ajax-form');
 
         $.ajax({
@@ -52,57 +36,63 @@ $(document).ready(function(){
             processData: false,
 
             success: function (data) {
-                console.log("ajaxUploadForStaticAnalysis success");
+                console.log("ajaxUploadForAnalysis success");
 
-                if (data.error) {
-                    // TODO: handle error
-                } else if (data.poll_redirects) {
+                if (data.html) {
                     $("html").html(data.html);
 
-                    uploadedApkCount = Math.min(data.poll_redirects.length, 10);
-                    for (var index in data.poll_redirects) {
-                        doSetPollStaticAnalysisTimeout(data, index);
-                    }
+                    setTimeout(function () {
+                        pollAnalysis(data)
+                    }, 10 * 1000);
                 }
             },
             error: function (data) {
-                console.log("ajaxUploadForStaticAnalysis error");
+                console.log("ajaxUploadForAnalysis error");
                 // TODO: handle error
             }
         });
     }
 
-    function doSetPollStaticAnalysisTimeout(data, index) {
-        setTimeout(function () {
-            pollStaticAnalysis(data.poll_redirects[index])
-        }, 10 * uploadedApkCount * 1000);
-    }
 
-    // poll static analysis asynchronously
+    // mapping of apk_filename to tuple-like array of selected activities and scenario_settings_id
+    // set when selecting an activity, sent to server in polling loop, then reset
+    var apkActivities = {};
+
+
+    // poll (static and dynamic) analysis asynchronously
+    // also starts dynamic analysis on the server through this call (if static analysis finished or activities selected)
     // replace all result rows matched by scenario settings id
-    // start dynamic analysis asynchronously if static analysis successful
-    function pollStaticAnalysis(poll_redirect) {
-        console.log("pollStaticAnalysis");
+    function pollAnalysis(data) {
+        console.log("pollAnalysis");
+
+        data.static_analysis_ids_w_activities = {};
+        for (var apk_filename in apkActivities) {
+            var static_analysis_id = data.apk_filename_to_static_analysis_ids[apk_filename];
+            data.static_analysis_ids_w_activities[static_analysis_id] = apkActivities[apk_filename];
+        }
+        apkActivities = {};
 
         $.ajax({
-            type: 'GET',
-            url: poll_redirect,
+            type: 'POST',
+            url: data.poll_url,
+            data: JSON.stringify(data),
+            contentType: 'application/json',
+            dataType: 'json',
             success: function (data) {
-                console.log("pollStaticAnalysis success");
+                console.log("pollAnalysis success");
 
                 updateHtml(data);
+                setPopovers();
 
-                if (data.error) {
-                    // TODO: handle error
-                } else if (data && data.dynamic_analysis_url && data.activities_dynamic_analysis_url) {
-                    setActivityOnClickListeners(data.activities_dynamic_analysis_url);
-                    startDynamicAnalysis(data.dynamic_analysis_url);
-                } else {
-                    setTimeout(function () {
-                        pollStaticAnalysis(poll_redirect);
-                    }, 10 * uploadedApkCount * 1000);
+                if (Object.keys(data.dynamic_analysis_ids_w_state).length) {
+                    setActivityOnClickListeners();
                 }
 
+                if (data.html) {
+                    setTimeout(function () {
+                        pollAnalysis(data);
+                    }, 10 * 1000);
+                }
             },
             error: function (data) {
                 console.log("pollStaticAnalysis error");
@@ -111,131 +101,57 @@ $(document).ready(function(){
         })
     }
 
-    // start dynamic analysis asynchronously
-    // start polling dynamic analysis results
-    function startDynamicAnalysis(dynamic_analysis_url) {
-        console.log("startDynamicAnalysis");
+    function selectActivity() {
+        console.log("selectActivity");
+        var parent = $(this).parent();
 
-        $.ajax({
-            type: 'POST',
-            url: dynamic_analysis_url,
-            success: function (data) {
-                console.log("startDynamicAnalysis success");
+        var aselect_id = parent[0].id;
+        var aselect_class = parent.attr('class');
 
-                if (data.poll_redirect) {
-                    setTimeout(function () {
-                        pollDynamicAnalysis(data.poll_redirect)
-                    }, 25 * uploadedApkCount * 1000);
-                }
+        parent.addClass("aselected");
+        parent.children('.span-discard').remove();
 
-            },
-            error: function (data) {
-                console.log("startDynamicAnalysis error");
-                // TODO: handle error
-            }
-        })
+        submitActivitesIfAllDecided(aselect_id, aselect_class);
     }
 
-    // poll dynamic analysis results until success or crash of all dynamic analyses
-    // replace all result rows matched by scenario settings id
-    function pollDynamicAnalysis(poll_redirect) {
-        console.log("pollDynamicAnalysis");
+    function discardActivity() {
+        console.log("discardActivity");
+        var parent = $(this).parent();
 
-        $.ajax({
-            type: 'GET',
-            url: poll_redirect,
-            success: function (data) {
-                console.log("pollDynamicAnalysis success");
+        var aselect_id = parent[0].id;
+        var aselect_class = parent.attr('class');
 
-                updateHtml(data);
+        parent.addClass("adiscarded");
+        parent.children('.span-select').remove();
 
-                if (!data.finished) {
-                    setTimeout(function () {
-                        pollDynamicAnalysis(poll_redirect);
-                    }, 25 * uploadedApkCount * 1000);
-                }
-            },
-            error: function (data) {
-                console.log("pollDynamicAnalysis error");
-                // TODO: handle error
-            }
-        })
-    }
-
-    function selectActivityFn(activities_dynamic_analysis_url) {
-        return function () {
-            console.log("selectActivity");
-            var parent = $(this).parent();
-
-            var aselect_id = parent[0].id;
-            var aselect_class = parent.attr('class');
-
-            parent.addClass("aselected");
-            parent.children('.span-discard').remove();
-
-            submitActivitesIfAllDecided(aselect_id, aselect_class, activities_dynamic_analysis_url);
-        }
-    }
-
-    function discardActivityFn(activities_dynamic_analysis_url) {
-        return function () {
-            console.log("discardActivity");
-            var parent = $(this).parent();
-
-            var aselect_id = parent[0].id;
-            var aselect_class = parent.attr('class');
-
-            parent.addClass("adiscarded");
-            parent.children('.span-select').remove();
-
-            submitActivitesIfAllDecided(aselect_id, aselect_class, activities_dynamic_analysis_url);
-        }
+        submitActivitesIfAllDecided(aselect_id, aselect_class);
     }
 
     // check if all activities of a scenario are either selected or discarded
     // if true then start dynamic analysis asynchronously
     // then start polling dynamic analysis results
-    function submitActivitesIfAllDecided(aselect_id, aselect_class, activities_dynamic_analysis_url) {
+    function submitActivitesIfAllDecided(aselect_id, aselect_class) {
         console.log("submitActivitiesIfAllDecided");
         var activities = $("." + aselect_class);
         var selected = activities.filter(".aselected");
         var discarded = activities.filter(".adiscarded");
-        console.log("activities length: " + activities.length);
-        console.log("selected length: " + selected.length);
-        console.log("discarded length: " + discarded.length);
         var num_undecided = activities.length - selected.length - discarded.length;
         if (num_undecided == 0) {
             scenario_settings_id = aselect_id.split('aselect')[1].split('-')[0];
             selected_names = selected.map(function () {
                 return this.id.substring(this.id.lastIndexOf('-') + 1, this.id.length);
-            });
+            }).get();
 
-            $.ajax({
-                type: 'POST',
-                url: activities_dynamic_analysis_url.replace("replace", scenario_settings_id),
-                data: JSON.stringify(selected_names.get()),
-                contentType: 'application/json',
-                success: function (data) {
-                    console.log("selectActivity success");
+            apk_filename = aselect_id.split(scenario_settings_id + '-')[1];
+            apk_filename = apk_filename.substring(0, apk_filename.lastIndexOf('-'));
 
-                    discarded.parent().not(".resultrow" + scenario_settings_id).remove();
-                    updateHtml(data);
+            apkActivities[apk_filename] = {'activities': selected_names, 'scenario_settings_id': scenario_settings_id};
 
-                    if (data.poll_redirect) {
-                        setTimeout(function () {
-                            pollDynamicAnalysis(data.poll_redirect)
-                        }, 25 * uploadedApkCount * 1000);
-                    }
-
-                },
-                error: function (data) {
-                    console.log("selectActivity error");
-                    // TODO: handle error
-                }
-            })
+            discarded.parent().not(".resultrow" + scenario_settings_id).remove(); // TODO: remember this
         }
     }
 
+    // update the rows in the table, handles many special cases
     function updateHtml(data) {
         if (data.html) {
 
@@ -247,9 +163,9 @@ $(document).ready(function(){
 
                 if (id.startsWith("resultrow")) {
                     var resultrow_class = id.substring(0, id.lastIndexOf('-'));
-                    if ($("#" + resultrow_class).length) {
+                    if ($(document.getElementById(resultrow_class)).length) {
                         // replace result row with result row containing subresult id (with activity name)
-                        $("#" + resultrow_class).replaceWith(data.html[id]);
+                        $(document.getElementById(resultrow_class)).replaceWith(data.html[id]);
                     } else if ($(document.getElementById(id)).length) {
                         // replace result row with subresult id with new result row
                         $(document.getElementById(id)).replaceWith(data.html[id]);
@@ -276,9 +192,31 @@ $(document).ready(function(){
         }
     }
 
-    function setActivityOnClickListeners(activities_dynamic_analysis_url) {
-        $('.span-select').click(selectActivityFn(activities_dynamic_analysis_url));
-        $('.span-discard').click(discardActivityFn(activities_dynamic_analysis_url));
+    function setActivityOnClickListeners() {
+        console.log("setActivityOnClickListeners");
+        var select = $('.span-select');
+        var discard = $('.span-discard');
+
+        select.unbind('click');
+        discard.unbind('click');
+
+        select.bind('click', selectActivity);
+        discard.bind('click', discardActivity);
+    }
+
+    function setPopovers() {
+        $('.text-danger[data-toggle="popover"]').popover({
+            html: true,
+            template: '<div class="popover"><div class="arrow"></div><h3 class="popover-title popover-title-danger"></h3><div class="popover-content"></div></div>'
+        });
+        $('.text-success[data-toggle="popover"]').popover({
+            html: true,
+            template: '<div class="popover"><div class="arrow"></div><h3 class="popover-title popover-title-success"></h3><div class="popover-content"></div></div>'
+        });
+        $('.text-muted[data-toggle="popover"]').popover({
+            html: true,
+            template: '<div class="popover"><div class="arrow"></div><h3 class="popover-title popover-title-muted"></h3><div class="popover-content"></div></div>'
+        });
     }
 
     $('#add-btn').click(ajaxButtonClick);
@@ -288,7 +226,7 @@ $(document).ready(function(){
     $('#register-btn').click(ajaxButtonClick);
     $('#logout-btn').click(ajaxButtonClick);
 
-    $('#analysis-btn').change(ajaxUploadForStaticAnalysis);
+    $('#analysis-btn').change(ajaxUploadForAnalysis);
 
 });
 

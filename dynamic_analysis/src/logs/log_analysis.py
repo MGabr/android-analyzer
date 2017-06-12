@@ -12,14 +12,12 @@ class LogAnalysisResult:
         self.connected_hosts = connected_hosts
 
         self.is_vulnerable = bool(self.connected_hosts)
-        self.is_statically_vulnerable = bool(self.dynamic_analysis_result.is_statically_vulnerable)
 
     def __json__(self):
         return {
             'dynamic_analysis_result': self.dynamic_analysis_result,
             'connected_hosts': list(self.connected_hosts) if self.connected_hosts else None,
-            'is_vulnerable': self.is_vulnerable,
-            'is_statically_vulnerable': self.is_statically_vulnerable}
+            'is_vulnerable': self.is_vulnerable}
 
 
 def analyse_logs(dynamic_analysis_results):
@@ -31,7 +29,7 @@ def analyse_logs(dynamic_analysis_results):
             else:
                 log_analysis_results += [LogAnalysisResult(dynamic_analysis_result)]
         return log_analysis_results
-    except Exception as e:
+    except Exception:
         logger.exception("Crash during analysing logs")
         return []
 

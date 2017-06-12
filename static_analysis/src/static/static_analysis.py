@@ -26,10 +26,10 @@ class StaticAnalysisResults:
 
 
 class StaticAnalysisResult:
-    def __init__(self, apk_folder, vuln_entry, meth_nm, tag, vuln_type):
+    def __init__(self, apk_folder, vuln_entry, activity_name, tag, vuln_type):
         self.apk_folder = apk_folder
         self.vuln_entry = vuln_entry
-        self.meth_nm = meth_nm  # this is not method but activity (class) name??
+        self.activity_name = activity_name
         self.tag = tag
         self.vuln_type = vuln_type
 
@@ -37,14 +37,14 @@ class StaticAnalysisResult:
         return {
             'apk_folder': self.apk_folder,
             'vuln_entry': self.vuln_entry,
-            'meth_nm': self.meth_nm,
+            'activity_name': self.activity_name,
             'tag': self.tag,
             'vuln_type': {
                 'value': self.vuln_type
             }}
 
     def __key(self):
-        return (self.apk_folder, self.vuln_entry, self.meth_nm, self.tag, self.vuln_type)
+        return (self.apk_folder, self.vuln_entry, self.activity_name, self.tag, self.vuln_type)
 
     def __eq__(self, other):
         return self.__key() == other.__key()
@@ -108,13 +108,13 @@ class StaticAnalyzer:
         if not node.parents:
             class_nm = node.method_defn.split("->")[0]
 
-            for meth_nm, method in self.CLASS[class_nm]:
-                if "init" in meth_nm and meth_nm in self.NODES and meth_nm not in seen:
+            for activity_name, method in self.CLASS[class_nm]:
+                if "init" in activity_name and activity_name in self.NODES and activity_name not in seen:
                     # no calling method, continue traversing from the constructor of the methods class
-                    seen.add(meth_nm)
-                    result += self.traverse(apk, vuln, self.NODES[meth_nm], seen)
-                elif meth_nm in seen:
-                    result += self.result_with_tag_from_manifest(apk, vuln, meth_nm)
+                    seen.add(activity_name)
+                    result += self.traverse(apk, vuln, self.NODES[activity_name], seen)
+                elif activity_name in seen:
+                    result += self.result_with_tag_from_manifest(apk, vuln, activity_name)
                 # other cases, not seen?
         else:
             for parent in node.parents:
