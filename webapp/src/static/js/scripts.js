@@ -83,10 +83,7 @@ $(document).ready(function(){
 
                 updateHtml(data);
                 setPopovers();
-
-                if (Object.keys(data.dynamic_analysis_ids_w_state).length) {
-                    setActivityOnClickListeners();
-                }
+                setActivityOnClickListeners();
 
                 if (data.html) {
                     setTimeout(function () {
@@ -137,16 +134,20 @@ $(document).ready(function(){
         var discarded = activities.filter(".adiscarded");
         var num_undecided = activities.length - selected.length - discarded.length;
         if (num_undecided == 0) {
-            scenario_settings_id = aselect_id.split('aselect')[1].split('-')[0];
-            selected_names = selected.map(function () {
-                return this.id.substring(this.id.lastIndexOf('-') + 1, this.id.length);
-            }).get();
+            if (selected.length > 0) {
+                scenario_settings_id = aselect_id.split('aselect')[1].split('-')[0];
+                selected_names = selected.map(function () {
+                    return this.id.substring(this.id.lastIndexOf('-') + 1, this.id.length);
+                }).get();
 
-            apk_filename = aselect_id.split(scenario_settings_id + '-')[1];
-            apk_filename = apk_filename.substring(0, apk_filename.lastIndexOf('-'));
+                apk_filename = aselect_id.split(scenario_settings_id + '-')[1];
+                apk_filename = apk_filename.substring(0, apk_filename.lastIndexOf('-'));
 
-            apkActivities[apk_filename] = {'activities': selected_names, 'scenario_settings_id': scenario_settings_id};
-
+                apkActivities[apk_filename] = {
+                    'activities': selected_names,
+                    'scenario_settings_id': scenario_settings_id
+                };
+            }
             discarded.parent().not(".resultrow" + scenario_settings_id).remove(); // TODO: remember this
         }
     }

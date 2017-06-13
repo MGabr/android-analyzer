@@ -86,7 +86,7 @@ def _start_dynamic_analysis(finished_static_analysis_tasks, static_analysis_task
     results = _flatten([_start_dynamic_analysis_for_static_analysis(task) for task in finished_static_analysis_tasks])
     results += [_start_activities_dynamic_analysis(task, activities['activities'], activities['scenario_settings_id'])
                 for task, activities in static_analysis_tasks_w_activities.iteritems()]
-    return results
+    return [r for r in results if r is not None]
 
 
 def _start_dynamic_analysis_for_static_analysis(static_analysis_task):
@@ -114,7 +114,7 @@ def _start_activities_dynamic_analysis(static_analysis_task, activities, scenari
         activities,
         scenario_settings_id)
     if not scenario_datas:
-        return []
+        return None
 
     newtask = celery.send_task(
         'dynamic_analysis_task',
