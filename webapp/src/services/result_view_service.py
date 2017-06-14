@@ -130,13 +130,9 @@ def render_static_analysis_results(static_analysis_results, html):
 def render_selected_activities(scenarios, scenario_settings_id, html):
     scenario = scenario_settings_service.get_of_user(scenario_settings_id)
 
-    flatten = lambda l: [item for sublist in l for item in sublist]
-    results = flatten([r.result_list for r in [s.static_analysis_results for s in scenarios.scenarios]])
-    result_list_for_s = [r for r in results
-                         if r.vuln_type.value == VulnType.selected_activities.value]
-    rvs = [ScenarioResultView(static_analysis_result=r,
-                              activity_selected=True,
-                              _dynamic_analysis_running=True)
+    results = [s.static_analysis_result for s in scenarios.scenario_list]
+    result_list_for_s = [r for r in results if r.vuln_type.value == VulnType.selected_activities.value]
+    rvs = [ScenarioResultView(static_analysis_result=r, activity_selected=True, _dynamic_analysis_running=True)
            for r in result_list_for_s]
 
     srvs = [ScenarioSettingsResultView(scenario, scenarios.apk_filename, scenario_result_views=rvs)]
@@ -157,9 +153,7 @@ def render_log_analysis_results(log_analysis_results, html):
 
 
 def _html_dict(srvs, html, only_first_as_resultrow=False):
-
     for srv in srvs:
-
         for index, r in enumerate(srv.scenario_result_views):
             if not only_first_as_resultrow or index == 0:
                 result_row_id = resultrow_id_for_result(srv, r)

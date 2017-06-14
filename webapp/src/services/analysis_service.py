@@ -69,6 +69,7 @@ def get_analysis_state(state_json):
     html = dict()
     _set_static_analysis_html(finished_static_analysis_tasks, html)
     _set_dynamic_analysis_html(dynamic_analysis_tasks, state_json, html)
+    _set_activities_html(static_analysis_tasks_w_activities, html)
 
     return _create_state(
         static_analysis_tasks,
@@ -138,6 +139,19 @@ def _set_dynamic_analysis_html(dynamic_analysis_tasks, state_json, html):
     log_analysis_results = _flatten([result.log_analysis_results for result in results
                                     if result.get('log_analysis_results')])
     result_view_service.render_log_analysis_results(log_analysis_results, html)
+
+
+def _set_activities_html(static_analysis_tasks_w_activities, html):
+    for task, activities in static_analysis_tasks_w_activities.iteritems():
+        r = DictObject(task.result)
+
+        scenario_datas = scenario_service.get_for_choosen_activities_and_settings(
+            r.static_analysis_results,
+            activities['activities'],
+            activities['scenario_settings_id'])
+        if scenario_datas:
+            for scenario_data in scenario_datas:
+                result_view_service.render_selected_activities(scenario_data, activities['scenario_settings_id'], html)
 
 
 def _create_state(

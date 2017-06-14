@@ -58,6 +58,8 @@ $(document).ready(function(){
     // set when selecting an activity, sent to server in polling loop, then reset
     var apkActivities = {};
 
+    // callbacks which should be called after polling success
+    var pollCallbacks = [];
 
     // poll (static and dynamic) analysis asynchronously
     // also starts dynamic analysis on the server through this call (if static analysis finished or activities selected)
@@ -80,6 +82,11 @@ $(document).ready(function(){
             dataType: 'json',
             success: function (data) {
                 console.log("pollAnalysis success");
+
+                for (var index in pollCallbacks) {
+                    pollCallbacks[index]();
+                }
+                pollCallbacks = [];
 
                 updateHtml(data);
                 setPopovers();
@@ -148,7 +155,15 @@ $(document).ready(function(){
                     'scenario_settings_id': scenario_settings_id
                 };
             }
-            discarded.parent().not(".resultrow" + scenario_settings_id).remove(); // TODO: remember this
+
+            var pollCallbackClosure = function (scenario_settings_id, apk_filename) {
+                return function () {
+                    discarded.parent().not(".resultrow" + scenario_settings_id + "-" + apk_filename).remove();
+                };
+            };
+            var pollCallback = pollCallbackClosure(scenario_settings_id, apk_filename);
+            pollCallbacks.push(pollCallback);
+
         }
     }
 
