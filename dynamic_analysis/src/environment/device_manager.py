@@ -3,6 +3,8 @@ import os
 import subprocess
 import time
 
+from billiard.exceptions import SoftTimeLimitExceeded
+
 logger = logging.getLogger(__name__)
 
 
@@ -60,6 +62,10 @@ def _get_fitting_sdk_version(min_sdk_version, target_sdk_version):
 
 def _wait_until_boot_completed(emulator_id):
     cmd = "adb -s " + emulator_id + " wait-for-device shell getprop sys.boot_completed"
+    slept_seconds = 0
     while "1" not in subprocess.check_output(cmd, shell=True):
         time.sleep(1)
+        slept_seconds += 1
+        if slept_seconds == 120:
+            raise SoftTimeLimitExceeded()
         logger.debug(cmd)

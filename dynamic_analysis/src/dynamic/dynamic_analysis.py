@@ -203,11 +203,21 @@ def run_ui_traversal(scenario, emulator_id, smart_input_results, smart_input_ass
 
     start_activity(emulator_id, scenario.static_analysis_result.activity_name)
 
-    time.sleep(5)
-
-    # TODO: if there is a problem here, there seems to be no exception to catch
     device, serialno = ViewClient.connectToDeviceOrExit(serialno=emulator_id)
-    vc = ViewClient(device, serialno)
+    vc = ViewClient(device, serialno, autodump=False)
+
+    # try dumping 5 times, before timing out
+    dump_tries = 0
+    dump_error = True
+    while dump_error and dump_tries < 5:
+        dump_error = False
+        dump_tries += 1
+        try:
+            vc.dump(sleep=5)
+        except Exception:
+            dump_error = True
+    if dump_error:
+        raise SoftTimeLimitExceeded()
 
     edittexts = vc.findViewsWithAttribute("class", "android.widget.EditText")
     logger.info("EditText views: %s" % str(edittexts))
