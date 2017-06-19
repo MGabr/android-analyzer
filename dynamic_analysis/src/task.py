@@ -1,27 +1,57 @@
 import logging
+from urllib import urlretrieve
 
 from celery import Celery
+from flask_socketio import SocketIO
 
+from common.dto.scenario import ScenariosData
+from common.dto_dependency_loader import DtoDependencyLoader
+# Imports needed for SQLAlchemy to work
+from common.models import certificate, scenario_settings, sys_certificates_table, user, user_certificates_table
+from common.models.smart_input_assignments import SmartInputAssignment
+from common.models.user import User
+from src.db_base import Session, SQLAlchemyTask
+from src.definitions import INPUT_APK_DIR
 from src.dict_object import DictObject
 from src.dynamic.dynamic_analysis import analyze_dynamically
 
 
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
-celery = Celery(broker='amqp://admin:mypass@rabbit//', backend='file:///files/tmp/celery_results')
-celery.conf.update()
+celery = Celery(broker='amqp://admin:mypass@rabbit//')
 
 
-@celery.task(bind=True, name='dynamic_analysis_task', default_retry_delay=60, max_retries=1, soft_time_limit=600)
-def dynamic_analysis_task(self, apk_name, scenarios, smart_input_results, smart_input_assignment):
-    log_analysis_results = analyze_dynamically(
-        apk_name,
-        DictObject(scenarios),
-        DictObject(smart_input_results),
-        DictObject(smart_input_assignment),
-        task=self)
+socketio = SocketIO(message_queue='amqp://admin:mypass@rabbit//', async_mode='threading')
 
-    return {'msg_done': 'Analysed app in all scenarios.',
-            'log_analysis_results': log_analysis_results,
-            'state_count': len(log_analysis_results) + 1}
+
+@celery.task(
+    name='dynamic_analysis_task',
+    default_retry_delay=10,
+    max_retries=1,
+    soft_time_limit=600,
+    base=SQLAlchemyTask)
+def dynamic_analysis_task(apk_name, scenarios, smart_input_results, username):
+    try:
+        logger.info('Retrieving APK and loading DTO dependencies.')
+        urlretrieve('http://webapp:5000/apk/' + apk_name, INPUT_APK_DIR + apk_name + ".apk")
+        DtoDependencyLoader.session = Session
+        scenarios = ScenariosData(**scenarios)
+
+        current_user = Session.query(User).filter(User.username == username).one()
+
+        logger.info('Starting dynamic analysis.')
+        timed_out = analyze_dynamically(
+            apk_name,
+            scenarios,
+            DictObject(smart_input_results),
+            SmartInputAssignment(),
+            socketio,
+            current_user)
+
+        if timed_out:
+            dynamic_analysis_task.retry()
+
+    except Exception:
+        logger.exception("Dynamic analysis crashed")

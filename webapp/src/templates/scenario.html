@@ -75,6 +75,11 @@
         <input type="checkbox" class="form-control" id="strace" name="strace" style="width: 33px"
                {% if sc.strace %}checked{% endif %}
                {% if sc.is_default %}disabled{% endif %}>
+
+        <label for="add_upstream_certs">Add upstream certs (to analyse getPeerCertificates pinning bug)</label>
+        <input type="checkbox" class="form-control" id="add_upstream_certs" style="width: 33px"
+                {% if sc.add_upstream_certs %}checked{% endif %}
+                {% if sc.is_default %}disabled{% endif %}>
     </form>
 
     {% if new %}

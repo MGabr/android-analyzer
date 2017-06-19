@@ -18,6 +18,9 @@ class DictObject:
     def __getitem__(self, item):
         return self.__dict__[item]
 
+    def __setitem__(self, key, value):
+        setattr(self, key, value)
+
     # to also allow dictionary get access
     def get(self, key, default=None):
         try:

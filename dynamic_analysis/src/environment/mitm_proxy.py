@@ -1,5 +1,6 @@
 import logging
 import shlex
+import os
 
 import subprocess32 as subprocess
 
@@ -8,42 +9,68 @@ from src.definitions import LOGS_DIR, CERTS_DIR, SCRIPTS_DIR
 logger = logging.getLogger(__name__)
 
 
-def start_mitm_proxy(certificate, add_upstream_certs, log_id):
-    cmd = "mitmdump -q -dd -s '{scripts_dir}log.py {logs_dir}mitm_proxy_log{log_id}' --port 8080".format(
-        scripts_dir=SCRIPTS_DIR,
-        logs_dir=LOGS_DIR,
-        log_id=log_id)
-    if certificate.custom_ca:
-        prev_cmd = "cp {certs_dir}{custom_ca} {certs_dir}/mitmproxy-ca.pem".format(
-            certs_dir=CERTS_DIR,
-            custom_ca=certificate.custom_ca)
-        logger.debug(prev_cmd)
-        subprocess.call(prev_cmd, shell=True)
+class MitmProxy:
+    def __init__(self, certificate, add_upstream_certs, log_id):
+        self.process = None
+        self.text_to_file_safer = TextToFileSafer()
 
-        cmd += " --cadir " + CERTS_DIR
-    if certificate.custom_cert:
-        if certificate.custom_cert_domain:
-            cmd += " --cert {domain}={certs_dir}{custom_cert}".format(
-                domain=certificate.custom_cert_domain,
-                certs_dir=CERTS_DIR,
-                custom_cert=certificate.custom_cert)
-        else:
-            cmd += " --cert *=" + CERTS_DIR + certificate.custom_cert
-    if add_upstream_certs:
-        cmd += " --add-upstream-certs-to-client-chain --insecure"
+        self.certificate = certificate
+        self.add_upstream_certs = add_upstream_certs
+        self.log_id = log_id
 
-    logger.debug(cmd)
-    process = subprocess.Popen(shlex.split(cmd))
-    return process
+    def __enter__(self):
+        self.start()
+
+    def start(self):
+        cmd = "mitmdump -q -dd -s '{scripts_dir}log.py {logs_dir}mitm_proxy_log{log_id}' --port 8080".format(
+            scripts_dir=SCRIPTS_DIR,
+            logs_dir=LOGS_DIR,
+            log_id=self.log_id)
+
+        if self.certificate.custom_ca:
+            filepath = "{certs_dir}mitmproxy-ca.pem".format(certs_dir=CERTS_DIR)
+            self.text_to_file_safer.save(self.certificate.custom_ca, filepath)
+            cmd += " --cadir " + CERTS_DIR
+
+        if self.certificate.custom_cert:
+            filepath = "{certs_dir}custom_cert.pem".format(certs_dir=CERTS_DIR)
+            self.text_to_file_safer.save(self.certificate.custom_cert, filepath)
+            if self.certificate.custom_cert_domain:
+                cmd += " --cert {domain}={filep}".format(domain=self.certificate.custom_cert_domain, filep=filepath)
+            else:
+                cmd += " --cert *=" + filepath
+
+        if self.add_upstream_certs:
+            cmd += " --add-upstream-certs-to-client-chain --insecure"
+
+        logger.debug(cmd)
+        self.process = subprocess.Popen(shlex.split(cmd))
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.kill()
+
+    def kill(self):
+        if self.process:
+            self.process.kill()
+            self.process.communicate(input="y\n")
+            try:
+                self.process.wait(timeout=10)
+            except subprocess.TimeoutExpired as e:
+                logger.exception("Could not close network monitor")
+            except OSError as e:
+                logger.warn(e)
 
 
-def kill_mitm_proxy(mitm_proxy_process):
-    mitm_proxy_process.kill()
-    mitm_proxy_process.communicate(input="y\n")
-    try:
-        mitm_proxy_process.wait(timeout=10)
-    except subprocess.TimeoutExpired as e:
-        logger.exception("Could not close network monitor")
-    except OSError as e:
-        logger.warn(e)
+class TextToFileSafer:
+    def __init__(self):
+        self.saved_filepaths = []
 
+    def save(self, text, filepath):
+        with open(filepath, "w+") as saved_file:
+            saved_file.write(text)
+            self.saved_filepaths += [filepath]
+
+    def remove_all(self):
+        for filepath in self.saved_filepaths:
+            os.remove(filepath)
+        self.saved_filepaths = []

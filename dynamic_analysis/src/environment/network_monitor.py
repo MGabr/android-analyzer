@@ -5,13 +5,39 @@ import subprocess32 as subprocess
 
 from src.definitions import LOGS_DIR
 
+
 logger = logging.getLogger(__name__)
 
 
-def start_network_monitor(emulator_id, package_name, log_id):
-    pid = get_pid(emulator_id, package_name)
-    process = trace_pid(emulator_id, pid, log_id)
-    return process
+class NetworkMonitor:
+    def __init__(self, strace_enabled, emulator_id, package_name, log_id):
+        self.process = None
+
+        self.strace_enabled = strace_enabled
+        self.emulator_id = emulator_id
+        self.package_name = package_name
+        self.log_id = log_id
+
+    def __enter__(self):
+        self.start()
+
+    def start(self):
+        if self.strace_enabled:
+            pid = get_pid(self.emulator_id, self.package_name)
+            self.process = trace_pid(self.emulator_id, pid, self.log_id)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.kill()
+
+    def kill(self):
+        if self.process:
+            self.process.kill()
+            try:
+                self.process.wait(timeout=10)
+            except subprocess.TimeoutExpired as e:
+                logger.exception("Could not close network monitor")
+            except OSError as e:
+                logger.warn(e)
 
 
 def get_pid(emulator_id, package_name):
@@ -34,13 +60,3 @@ def trace_pid(emulator_id, pid, log_id):
     network_monitor_process.stdin.write(strace_cmd)
 
     return network_monitor_process
-
-
-def kill_network_monitor(network_monitor_process):
-    network_monitor_process.kill()
-    try:
-        network_monitor_process.wait(timeout=10)
-    except subprocess.TimeoutExpired as e:
-        logger.exception("Could not close network monitor")
-    except OSError as e:
-        logger.warn(e)

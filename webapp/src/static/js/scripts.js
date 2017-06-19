@@ -20,12 +20,24 @@ $(document).ready(function(){
         });
     }
 
-    // upload apk / start (static) analysis on server asynchronously
-    // render first full result page
-    // start polling analysis
-    function ajaxUploadForAnalysis(e) {
-        formName = $(this).attr('ajax-form');
+    var socket = null;
 
+    // set up socket.io connection for receiving analysis results asynchronously
+    // on successful setup, the APK is uploaded
+    function ajaxUploadForAnalysis(e) {
+        if (!socket) {
+            socket = io.connect(null, {'port': location.port, rememberTransport: false});
+            socket.on('html', updateHtml);
+            socket.on('connect', doAjaxUploadForAnalysis.bind(this));
+        } else {
+            doAjaxUploadForAnalysis();
+        }
+    }
+
+    // upload apk / start analysis on server asynchronously
+    // render first full result page
+    function doAjaxUploadForAnalysis() {
+        formName = $(this).attr('ajax-form');
         $.ajax({
             type: $(this).attr('ajax-method'),
             url: $(this).attr('ajax-url'),
@@ -37,72 +49,17 @@ $(document).ready(function(){
 
             success: function (data) {
                 console.log("ajaxUploadForAnalysis success");
-
                 if (data.html) {
                     $("html").html(data.html);
-
-                    setTimeout(function () {
-                        pollAnalysis(data)
-                    }, 10 * 1000);
                 }
             },
             error: function (data) {
                 console.log("ajaxUploadForAnalysis error");
                 // TODO: handle error
+                socket.disconnect();
+                socket = null;
             }
         });
-    }
-
-
-    // mapping of apk_filename to tuple-like array of selected activities and scenario_settings_id
-    // set when selecting an activity, sent to server in polling loop, then reset
-    var apkActivities = {};
-
-    // callbacks which should be called after polling success
-    var pollCallbacks = [];
-
-    // poll (static and dynamic) analysis asynchronously
-    // also starts dynamic analysis on the server through this call (if static analysis finished or activities selected)
-    // replace all result rows matched by scenario settings id
-    function pollAnalysis(data) {
-        console.log("pollAnalysis");
-
-        data.static_analysis_ids_w_activities = {};
-        for (var apk_filename in apkActivities) {
-            var static_analysis_id = data.apk_filename_to_static_analysis_ids[apk_filename];
-            data.static_analysis_ids_w_activities[static_analysis_id] = apkActivities[apk_filename];
-        }
-        apkActivities = {};
-
-        $.ajax({
-            type: 'POST',
-            url: data.poll_url,
-            data: JSON.stringify(data),
-            contentType: 'application/json',
-            dataType: 'json',
-            success: function (data) {
-                console.log("pollAnalysis success");
-
-                for (var index in pollCallbacks) {
-                    pollCallbacks[index]();
-                }
-                pollCallbacks = [];
-
-                updateHtml(data);
-                setPopovers();
-                setActivityOnClickListeners();
-
-                if (data.html) {
-                    setTimeout(function () {
-                        pollAnalysis(data);
-                    }, 10 * 1000);
-                }
-            },
-            error: function (data) {
-                console.log("pollStaticAnalysis error");
-                // TODO: handle error
-            }
-        })
     }
 
     function selectActivity() {
@@ -131,6 +88,8 @@ $(document).ready(function(){
         submitActivitesIfAllDecided(aselect_id, aselect_class);
     }
 
+    var updateHtmlCallbacks = [];
+
     // check if all activities of a scenario are either selected or discarded
     // if true then start dynamic analysis asynchronously
     // then start polling dynamic analysis results
@@ -156,13 +115,13 @@ $(document).ready(function(){
                 };
             }
 
-            var pollCallbackClosure = function (scenario_settings_id, apk_filename) {
+            var updateHtmlCallbackClosure = function (scenario_settings_id, apk_filename) {
                 return function () {
                     discarded.parent().not(".resultrow" + scenario_settings_id + "-" + apk_filename).remove();
                 };
             };
-            var pollCallback = pollCallbackClosure(scenario_settings_id, apk_filename);
-            pollCallbacks.push(pollCallback);
+            var updateHtmlCallback = updateHtmlCallbackClosure(scenario_settings_id, apk_filename);
+            updateHtmlCallbacks.push(pollCallback);
 
         }
     }
@@ -170,6 +129,13 @@ $(document).ready(function(){
     // update the rows in the table, handles many special cases
     function updateHtml(data) {
         if (data.html) {
+
+            if (updateHtmlCallbacks) {
+                for (var index in updateHtmlCallbacks) {
+                    updateHtmlCallbacks[index]();
+                }
+                updateHtmlCallbacks = [];
+            }
 
             for (var id in data.html) {
 
@@ -205,11 +171,13 @@ $(document).ready(function(){
 
                 }
             }
+
+            setActivityOnClickListeners();
+            setPopovers();
         }
     }
 
     function setActivityOnClickListeners() {
-        console.log("setActivityOnClickListeners");
         var select = $('.span-select');
         var discard = $('.span-discard');
 

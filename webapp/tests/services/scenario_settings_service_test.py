@@ -1,11 +1,11 @@
-from src.app import db
-from src.services.errors import FormError
-from src.services.scenario_settings_service import edit, add, delete
-from werkzeug.datastructures import ImmutableMultiDict
-
 from webapp.src.models import Certificate
 from webapp.src.models import ScenarioSettings
 from webapp.src.models import VulnType
+from werkzeug.datastructures import ImmutableMultiDict
+
+from services.scenario_settings_service import edit, add, delete
+from src.app import db
+from src.services.errors import FormError
 from webapp.tests.app_test import AppTest
 
 

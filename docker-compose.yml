@@ -8,26 +8,33 @@ services:
       - RABBITMQ_DEFAULT_PASS=mypass
     expose:
       - "5672"
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "15672"
+
+  mysql:
+    hostname: mysql
+    image: mysql:latest
+    environment:
+      - MYSQL_ROOT_PASSWORD=mypass
+      - MYSQL_DATABASE=android-analyzer
+    expose:
+      - "3306"
 
   dynamic_analysis:
+    image: mgabr/dynamic_analysis
     build:
-      context: dynamic_analysis
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: Dockerfile_dynamic_analysis
       args:
         - API_VERSIONS=19,25
         # Set the API versions that should be supported
         # more versions may enable more specific analysis, but will significantly increase docker build time
         # make sure that API_VERSIONS in environment are the same
-    links:
-      - rabbit
     depends_on:
       - rabbit
-      - files
+      - mysql
+    links:
+      - rabbit
     volumes:
-      - files:/files
       - /tmp/.X11-unix:/tmp/.X11-unix
     devices:
       - /dev/kvm
@@ -42,37 +49,26 @@ services:
       # make sure that API_VERSIONS fit the ones specified in build args
 
   static_analysis:
+    image: mgabr/static_analysis
     build:
-      context: static_analysis
-      dockerfile: Dockerfile
-    links:
-      - rabbit
+      context: .
+      dockerfile: Dockerfile_static_analysis
     depends_on:
       - rabbit
-      - files
-    volumes:
-      - files:/files
+      - mysql
+    links:
+      - rabbit
+
 
   webapp:
+    image: mgabr/webapp
     build:
-      context: webapp
-      dockerfile: Dockerfile
-    links:
-      - rabbit
+      context: .
+      dockerfile: Dockerfile_webapp
     depends_on:
       - rabbit
-      - files
+      - mysql
+    links:
+      - rabbit
     ports:
       - "5000:5000"
-    volumes:
-      - files:/files
-
-  files:
-    build:
-      context: files
-      dockerfile: Dockerfile
-    volumes:
-      - files:/files
-
-volumes:
-  files:

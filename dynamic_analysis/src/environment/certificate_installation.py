@@ -1,23 +1,60 @@
 import logging
+import os
 import re
 import subprocess
 
 from src.definitions import CERTS_DIR
 
+
 logger = logging.getLogger(__name__)
 
 
+class InstalledCertificates:
+    def __init__(self, emulator_id, certificates_to_install):
+        self.installed_certificates = []
+        self.emulator_id = emulator_id
+        self.certificates_to_install = certificates_to_install
+
+    def __enter__(self):
+        self.install_all()
+
+    def install_all(self):
+        if self.certificates_to_install:
+            try:
+                while True:
+                    certificate_to_install = self.certificates_to_install.pop()
+                    install_as_system_certificate(self.emulator_id, certificate_to_install)
+                    self.installed_certificates += [certificate_to_install]
+            except IndexError:
+                # list is now empty
+                pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.uninstall_all()
+
+    def uninstall_all(self):
+        if self.installed_certificates:
+            try:
+                while True:
+                    installed_certificate = self.installed_certificates.pop()
+                    uninstall_system_certificate(self.emulator_id, installed_certificate)
+            except IndexError:
+                # list is now empty
+                pass
+
+
 def install_as_system_certificate(emulator_id, cert):
-    cert_filename = CERTS_DIR + cert.custom_ca
 
     # extract only certificate part - without private key
-    if not cert_filename.endswith(".crt"):
-        if cert_filename.endswith(".pem"):
-            new_filename = cert_filename.replace(".pem", ".crt")
-            cmd = "openssl x509 -inform pem -in " + cert_filename + " -out " + new_filename
-            logger.debug(cmd)
-            subprocess.check_call(cmd, shell=True)
-            cert_filename = new_filename
+    cert_filename = CERTS_DIR + 'installed_cert.pem'
+    with open(cert_filename, 'w') as cert_file:
+        cert_file.write(cert.custom_ca)
+    new_filename = cert_filename.replace(".pem", ".crt")
+    cmd = "openssl x509 -inform pem -in " + cert_filename + " -out " + new_filename
+    logger.debug(cmd)
+    subprocess.check_call(cmd, shell=True)
+    os.remove(cert_filename)
+    cert_filename = new_filename
 
     cmd = "openssl x509 -in " + cert_filename + " -subject_hash_old -noout"
     logger.debug(cmd)
@@ -57,6 +94,9 @@ def uninstall_system_certificate(emulator_id, sys_cert_filename):
         cmd = "adb -s " + emulator_id + " shell rm /system/etc/security/cacerts/" + sys_cert_filename
         logger.debug(cmd)
         subprocess.check_call(cmd, shell=True)
+
+        cert_filename = CERTS_DIR + 'installed_cert.crt'
+        os.remove(cert_filename)
     except Exception as e:
         logger.exception("Could not uninstall system certificate")
 

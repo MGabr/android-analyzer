@@ -4,9 +4,9 @@ from androguard.core.analysis.analysis import VMAnalysis
 from androguard.core.bytecodes.apk import APK
 from androguard.core.bytecodes.dvm import DalvikVMFormat
 
+from common.models.vuln_type import VulnType
 from src.definitions import INPUT_APK_DIR
-from src.static.static_analysis import StaticAnalysisResult, StaticAnalysisResults
-
+from src.static.static_analysis import StaticAnalysisResult
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ class GetApkActivities:
 
     def get_all_activities(self):
         activity_names = self.a.get_activities()
-        return [StaticAnalysisResult(self.apk_name, None, a, "activity", "SelectedActivities")
+        return [StaticAnalysisResult(self.apk_name, None, a, "activity", VulnType.selected_activities.value)
                        for a in activity_names]
 
     # def get_activities_by_str(self, str):

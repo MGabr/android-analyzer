@@ -1,52 +1,31 @@
+import logging
 import os
 import re
-import logging
+
+from common.dto.dynamic_analysis import LogAnalysisResult
+from src.definitions import LOGS_DIR
 
 
 logger = logging.getLogger(__name__)
 
 
-class LogAnalysisResult:
-    def __init__(self, dynamic_analysis_result, connected_hosts=None):
-        self.dynamic_analysis_result = dynamic_analysis_result
-        self.connected_hosts = connected_hosts
-
-        self.is_vulnerable = bool(self.connected_hosts)
-
-    def __json__(self):
-        return {
-            'dynamic_analysis_result': self.dynamic_analysis_result,
-            'connected_hosts': list(self.connected_hosts) if self.connected_hosts else None,
-            'is_vulnerable': self.is_vulnerable}
-
-
-def analyse_logs(dynamic_analysis_results):
+def analyse_log(dynamic_analysis_result):
     try:
-        log_analysis_results = []
-        for dynamic_analysis_result in dynamic_analysis_results:
-            if dynamic_analysis_result.has_been_run and os.path.isfile(dynamic_analysis_result.get_mitm_proxy_log()):
-                log_analysis_results += [LogAnalysisResult(dynamic_analysis_result, analyse_log(dynamic_analysis_result))]
-            else:
-                log_analysis_results += [LogAnalysisResult(dynamic_analysis_result)]
-        return log_analysis_results
+        hosts = get_hosts_w_ips(dynamic_analysis_result)
+
+        if dynamic_analysis_result.scenario.scenario_settings.strace:
+            hosts = filter_hosts_with_straced(hosts, dynamic_analysis_result)
+        else:
+            hosts = {host for (host, ip) in hosts}
+
+        return LogAnalysisResult(dynamic_analysis_result, hosts)
     except Exception:
         logger.exception("Crash during analysing logs")
-        return []
-
-
-def analyse_log(dynamic_analysis_result):
-    hosts = get_hosts_w_ips(dynamic_analysis_result)
-
-    if dynamic_analysis_result.scenario.scenario_settings.strace:
-        hosts = filter_hosts_with_straced(hosts, dynamic_analysis_result)
-    else:
-        hosts = {host for (host, ip) in hosts}
-
-    return hosts
+        return LogAnalysisResult(dynamic_analysis_result)
 
 
 def get_hosts_w_ips(dynamic_analysis_result):
-    mitm_proxy = open(dynamic_analysis_result.get_mitm_proxy_log(), "r")
+    mitm_proxy = open(LOGS_DIR + "mitm_proxy_log" + str(dynamic_analysis_result.log_id), "r")
 
     hosts = set()
 
@@ -77,7 +56,7 @@ def get_hosts_w_ips(dynamic_analysis_result):
 
 
 def filter_hosts_with_straced(hosts, dynamic_analysis_result):
-    network = open(dynamic_analysis_result.get_network_monitor_log(), "r")
+    network = open(LOGS_DIR + "network_monitor_log" + str(dynamic_analysis_result.log_id), "r")
 
     app_ips = set()
 
@@ -91,4 +70,9 @@ def filter_hosts_with_straced(hosts, dynamic_analysis_result):
     network.close()
     os.remove(network.name)
 
-    return {host for (host, ip) in hosts if ip in app_ips}
+    for host, ip in hosts:
+        logger.warn("host: " + host + ", ip: " + ip)
+    for app_ip in app_ips:
+        logger.warn("app_ip: " + app_ip)
+
+    return {host for host, ip in hosts if ip in app_ips}

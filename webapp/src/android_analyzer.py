@@ -1,19 +1,21 @@
+import functools
 import logging
 from urlparse import urlparse, urljoin
 
-from flask import request, render_template, url_for, jsonify, json
-from flask_login import login_required
+from flask import request, render_template, url_for, jsonify, send_file
+from flask_login import login_required, current_user
+from flask_socketio import disconnect, join_room
 
-from src.app import app, login_manager
-from src.context_processors import context_processor
-from src.create_db import create_db, fill_db, drop_db
-from src.models.certificate import Certificate
-from src.models.scenario_settings import ScenarioSettings
-from src.models.vuln_type import VulnType
-from src.services import certificate_service
-from src.services import scenario_settings_service
-from src.services import user_service
+from common.models.certificate import Certificate
+from common.models.scenario_settings import ScenarioSettings
+from common.models.vuln_type import VulnType
+from services import scenario_settings_service
+from src.app import app, login_manager, socketio
+from src.create_db import create_db
+from src.definitions import INPUT_APK_DIR
 from src.services import analysis_service
+from src.services import certificate_service
+from src.services import user_service
 from src.services.errors import FormError, LoginError, FieldExistsError, EntityNotExistsError
 
 logging.basicConfig(level=logging.INFO)
@@ -27,7 +29,8 @@ def user_loader(user_id):
     return user_service.user_loader(user_id)
 
 
-app.context_processor(context_processor)
+# initialize db
+create_db()
 
 
 # ---- Views ----
@@ -43,8 +46,8 @@ def show_login():
     return render_template('login.html')
 
 
-@login_required
 @app.route('/settings', methods=['GET'])
+@login_required
 def show_settings():
     return render_template('settings.html',
                            scenarios=scenario_settings_service.get_all_of_user(),
@@ -52,6 +55,7 @@ def show_settings():
 
 
 @app.route('/scenario/<id>', methods=['GET'])
+@login_required
 def show_scenario(id):
     new = id == 'new'
     sc = ScenarioSettings() if new else scenario_settings_service.get_of_user(id)
@@ -63,23 +67,54 @@ def show_scenario(id):
 
 
 @app.route('/certificate/<id>', methods=['GET'])
+@login_required
 def show_certificate(id):
     new = id == 'new'
     c = Certificate() if new else certificate_service.get_of_user(id)
     return render_template('certificate.html', new=new, c=c)
 
 
-# ---- Api for AJAX calls ----
+# ---- Main API calls ----
 
 
 @app.route('/analysis', methods=['POST'])
+@login_required
 def start_analysis():
-    return analysis_service.start_analysis(request.files)
+    html = analysis_service.start_analysis(request.files)
+    if html:
+        return jsonify({'html': html})
+    else:
+        return _json_error()
 
 
-@app.route('/analysis/status', methods=['POST'])
-def get_analysis_status():
-    return analysis_service.get_analysis_state(json.loads(request.data))
+@app.route('/apk/<filename>', methods=['GET'])
+def get_apk(filename):
+    return send_file(INPUT_APK_DIR + filename + ".apk")
+
+
+def authenticated_only(f):
+    @functools.wraps(f)
+    def wrapped(*args, **kwargs):
+        if not current_user.is_authenticated:
+            disconnect()
+        else:
+            return f(*args, **kwargs)
+    return wrapped
+
+
+@socketio.on('connect')
+@authenticated_only
+def connect_handler():
+    join_room(current_user.username)
+
+
+@socketio.on('activities_analysis')
+@authenticated_only
+def activities_analysis_handler(filename, activities, scenario_settings_id):
+    pass
+
+
+# ---- Api for AJAX calls ----
 
 
 @app.route('/login', methods=["POST"])
@@ -101,50 +136,50 @@ def register():
     return _json_redirect(url_for('show_index'))
 
 
-@login_required
 @app.route("/logout", methods=["POST"])
+@login_required
 def logout():
     user_service.logout()
     return _json_redirect(url_for('show_index'))
 
 
-@login_required
 @app.route('/scenario/<id>', methods=['PUT'])
+@login_required
 def edit_scenario(id):
     scenario_settings_service.edit(id, request.form)
     return _json_redirect(url_for('show_scenario', id=id, edit_success=True))
 
 
-@login_required
 @app.route('/scenario', methods=['POST'])
+@login_required
 def add_scenario():
     sc = scenario_settings_service.add(request.form)
     return _json_redirect(url_for('show_settings', added_scenario=sc.id))
 
 
-@login_required
 @app.route('/scenario/<id>', methods=['DELETE'])
+@login_required
 def delete_scenario(id):
     scenario_settings_service.delete(id)
     return _json_redirect(url_for('show_settings', deleted_scenario=id))
 
 
-@login_required
 @app.route('/certificate/<id>', methods=['PUT'])
+@login_required
 def edit_certificate(id):
     certificate_service.edit(id, request.form)
     return _json_redirect(url_for('show_certificate', id=id, edit_success=True))
 
 
-@login_required
 @app.route('/certificate', methods=['POST'])
+@login_required
 def add_certificate():
     c = certificate_service.add(request.form)
     return _json_redirect(url_for('show_settings', added_certificate=c.id))
 
 
-@login_required
 @app.route('/certificate/<id>', methods=['DELETE'])
+@login_required
 def delete_certificate(id):
     certificate_service.delete(id)
     return _json_redirect(url_for('show_settings', deleted_certificate=id))
@@ -152,6 +187,10 @@ def delete_certificate(id):
 
 def _json_redirect(url):
     return jsonify({'redirect': url})
+
+
+def _json_error():
+    return jsonify({'error': True}), 400
 
 
 # ---- Error handlers ----
@@ -177,7 +216,4 @@ def handle_entity_not_exists_error(error):
 
 
 if __name__ == '__main__':
-    create_db()
-    fill_db()
-    app.run(host='0.0.0.0', threaded=True)
-    drop_db()
+    socketio.run(app, host='0.0.0.0', log_output=True)
