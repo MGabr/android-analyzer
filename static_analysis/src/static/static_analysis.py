@@ -7,6 +7,10 @@ from common.dto.static_analysis import StaticAnalysisResults, StaticAnalysisResu
 from common.models.vuln_type import VulnType
 
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 # increase recursion limit
 sys.setrecursionlimit(40000)
 
@@ -34,7 +38,7 @@ class StaticAnalyzer:
         self.NODES = {}
         # all method names (including class name)
         self.METHODS = set()
-        # array of (method name (including class name), method) tuples for each class name, TODO: better only method name??
+        # array of (method name (including class name), method) tuples for each class name
         self.CLASS = {}
         # (method name (including class name), vulnerability type) tuples for all possibly vulnerable overwritten methods
         self.VULN = []
@@ -203,12 +207,20 @@ class StaticAnalyzer:
 
         return package, min_sdk_version, target_sdk_version or platform_build_version_code
 
-    # Analyses the decoded APK in the given path and returns a list of ???
-    def analyze_statically(self, apk_path, apk_filename):
+    # Analyses the decoded APK in the given path
+    def analyze_statically(self, apk_path, apk_filename, methods_w_https):
         package, min_sdk_version, target_sdk_version = self.parse_manifest(apk_path)
         self.process_apk(apk_path)
 
         results = list()
+
+        # add methods with HTTPS URLs to be used as entrypoints
+        for (method, s) in methods_w_https:
+            if method in self.NODES:
+                logger.info("Adding " + VulnType.https.value + " entrypoint " + method)
+                self.VULN.append((method, VulnType.https.value))
+            else:
+                logger.info("Could not add " + VulnType.https.value + " entrypoint " + method + ". Probably library")
 
         for vuln in set(self.VULN):
             node = self.NODES[vuln[0]]

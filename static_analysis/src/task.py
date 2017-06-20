@@ -11,9 +11,8 @@ from common.services import templates_service
 from src.db_base import SQLAlchemyTask, Session
 from src.definitions import INPUT_APK_DIR
 from src.services import scenario_service
-from src.static.apk_activities import GetApkActivities
+from src.static.apk_analysis import ApkAnalysis
 from src.static.apk_disassembly import disassemble_apk
-from src.static.smart_input import generate_smart_input
 from src.static.static_analysis import StaticAnalyzer, StaticAnalysisResults
 
 
@@ -41,8 +40,10 @@ def static_analysis_task(apk_name, username):
         disassembled_path = disassemble_apk(apk_name)
 
         logger.info('Disassembled APK. Now statically analysing app.')
-        static_analysis_results = StaticAnalyzer().analyze_statically(disassembled_path, apk_name)
-        activities = GetApkActivities(apk_name).get_all_activities()
+        apk_analysis = ApkAnalysis(apk_name)
+        methods_w_https = apk_analysis.get_methods_with_https()
+        static_analysis_results = StaticAnalyzer().analyze_statically(disassembled_path, apk_name, methods_w_https)
+        activities = apk_analysis.get_all_activities_results()
 
         static_analysis_results = StaticAnalysisResults(
             static_analysis_results.apk_filename,
@@ -57,7 +58,7 @@ def static_analysis_task(apk_name, username):
         socketio.emit('html', {'html': html}, room=username)
 
         logger.info('Sent html to socket. Now generating smart input for app.')
-        smart_input_results = generate_smart_input(apk_name)
+        smart_input_results = apk_analysis.get_smart_input()
 
         logger.info('Generated smart input for app. Now getting scenarios for dynamic analysis.')
         scenario_datas = scenario_service.get_all_of_user(static_analysis_results, current_user)

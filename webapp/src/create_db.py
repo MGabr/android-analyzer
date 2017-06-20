@@ -157,7 +157,7 @@ def add_default_settings(user):
     no_pinning_sa = ScenarioSettings(
         user=user,
         name="App accepting fixed trusted CA (No pinning)",
-        vuln_type=VulnType.selected_activities,
+        vuln_type=VulnType.https,
         mitm_certificate=untrusted_ca,
         sys_certificates=[untrusted_ca],
         info_message='''The app has not implemented certificate pinning (securely).''',
@@ -166,7 +166,7 @@ def add_default_settings(user):
     no_pinning_sa_added_upstream_certs = ScenarioSettings(
         user=user,
         name="App accepting peer certificates (No pinning)",
-        vuln_type=VulnType.selected_activities,
+        vuln_type=VulnType.https,
         mitm_certificate=untrusted_ca,
         sys_certificates=[untrusted_ca],
         info_message='''The app has not implemented certificate pinning (securely). If the other scenario with the same description is not vulnerable, then this is a getPeerCertificates() bug vulnerability.''',

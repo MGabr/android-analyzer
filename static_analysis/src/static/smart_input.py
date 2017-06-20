@@ -2,14 +2,8 @@ import logging
 import re
 from xml.dom import minidom
 
-from androguard.core.analysis.analysis import VMAnalysis
-from androguard.core.analysis.ganalysis import GVMAnalysis
-from androguard.core.bytecodes.apk import APK, AXMLPrinter
-from androguard.core.bytecodes.dvm import DalvikVMFormat
+from androguard.core.bytecodes.apk import AXMLPrinter
 
-from src.definitions import INPUT_APK_DIR
-
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -65,25 +59,12 @@ def parse_const(instruction):
 
 class GetFieldType:
 
-    def __init__(self, apk_name):
-        self.apk = INPUT_APK_DIR + apk_name + ".apk"
-
-        logger.debug("Analyzing " + self.apk)
-
-        # analyze the dex file
-        self.a = APK(self.apk)
-
-        # get the vm analysis
-        self.d = DalvikVMFormat(self.a.get_dex())
-        self.dx = VMAnalysis(self.d)
-        self.gx = GVMAnalysis(self.dx, None)
-
-        self.d.set_vmanalysis(self.dx)
-        self.d.set_gvmanalysis(self.gx)
-
-        # create the cross reference
-        self.d.create_xref()
-        self.d.create_dref()
+    def __init__(self, apk_analysis):
+        # reuse existing androguard setup from APKAnalysis for better performance
+        self.a = apk_analysis.a
+        self.d = apk_analysis.d
+        self.dx = apk_analysis.dx
+        self.gx = apk_analysis.gx
 
         try:
             self.classes = self.get_class_dict()  # Get the classes for this apk
@@ -415,9 +396,3 @@ class TextField:
         type_class = self.get_type_class()
         type_var = self.get_type_variation(type_class)
         return 'name: %s;id: %s;type: %s;variations: %s;' % (self.name, self.id, type_class, type_var)
-
-
-# Returns a dict of activity names and a list of their text fields
-def generate_smart_input(apk_name):
-    smart_input_results = GetFieldType(apk_name).analyze()
-    return smart_input_results
