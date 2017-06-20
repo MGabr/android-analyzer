@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class InstalledCertificates:
     def __init__(self, emulator_id, certificates_to_install):
-        self.installed_certificates = []
+        self.installed_certificates_filenames = []
         self.emulator_id = emulator_id
         self.certificates_to_install = certificates_to_install
 
@@ -23,8 +23,8 @@ class InstalledCertificates:
             try:
                 while True:
                     certificate_to_install = self.certificates_to_install.pop()
-                    install_as_system_certificate(self.emulator_id, certificate_to_install)
-                    self.installed_certificates += [certificate_to_install]
+                    installed_filename = install_as_system_certificate(self.emulator_id, certificate_to_install)
+                    self.installed_certificates_filenames += [installed_filename]
             except IndexError:
                 # list is now empty
                 pass
@@ -33,11 +33,11 @@ class InstalledCertificates:
         self.uninstall_all()
 
     def uninstall_all(self):
-        if self.installed_certificates:
+        if self.installed_certificates_filenames:
             try:
                 while True:
-                    installed_certificate = self.installed_certificates.pop()
-                    uninstall_system_certificate(self.emulator_id, installed_certificate)
+                    filename = self.installed_certificates_filenames.pop()
+                    uninstall_system_certificate(self.emulator_id, filename)
             except IndexError:
                 # list is now empty
                 pass
@@ -69,6 +69,7 @@ def install_as_system_certificate(emulator_id, cert):
     cmd = "openssl x509 -in " + cert_filename + " -text -fingerprint -noout >> " + sys_cert_filename
     logger.debug(cmd)
     subprocess.check_call(cmd, shell=True)
+    os.remove(cert_filename)
 
     cmd = "adb -s " + emulator_id + " root"
     logger.debug(cmd)
@@ -82,6 +83,7 @@ def install_as_system_certificate(emulator_id, cert):
     logger.debug(cmd)
     subprocess.check_call(cmd, shell=True)
 
+    # use this instead of os.remove(), so we don't have to care in which path cmd's are executed
     cmd = "rm -f " + sys_cert_filename
     logger.debug(cmd)
     subprocess.check_call(cmd, shell=True)
@@ -89,15 +91,12 @@ def install_as_system_certificate(emulator_id, cert):
     return sys_cert_filename
 
 
-def uninstall_system_certificate(emulator_id, sys_cert_filename):
+def uninstall_system_certificate(emulator_id, installed_cert_filename):
     try:
-        cmd = "adb -s " + emulator_id + " shell rm /system/etc/security/cacerts/" + sys_cert_filename
+        cmd = "adb -s " + emulator_id + " shell rm /system/etc/security/cacerts/" + installed_cert_filename
         logger.debug(cmd)
         subprocess.check_call(cmd, shell=True)
-
-        cert_filename = CERTS_DIR + 'installed_cert.crt'
-        os.remove(cert_filename)
-    except Exception as e:
+    except Exception:
         logger.exception("Could not uninstall system certificate")
 
 
