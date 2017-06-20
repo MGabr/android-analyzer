@@ -13,10 +13,13 @@ from src.environment.certificate_installation import InstalledCertificates
 from src.environment.device_manager import DeviceManager
 from src.environment.mitm_proxy import MitmProxy
 from src.environment.network_monitor import NetworkMonitor
-from src.logs.log_analysis import analyse_log
+from src.logs.log_analysis import analyse_log, try_analyse_log
 
 
 logger = logging.getLogger(__name__)
+
+
+timed_out = False
 
 
 def analyze_dynamically(apk_name, scenarios, smart_input_results, smart_input_assignment, socketio, current_user):
@@ -26,6 +29,7 @@ def analyze_dynamically(apk_name, scenarios, smart_input_results, smart_input_as
     apk_path = INPUT_APK_DIR + apk_name + ".apk"
     installed = False
     failed_results = []
+    global timed_out
     timed_out = False
     try:
         # ==== Setup ====
@@ -74,8 +78,9 @@ def analyze_dynamically(apk_name, scenarios, smart_input_results, smart_input_as
 
 
 def run_scenarios(scenarios, smart_input_results, smart_input_assignment, emulator_id, socketio, current_user):
+    global timed_out
     log_id = 0
-    for scenario in scenarios.scenario_list:
+    for index, scenario in enumerate(scenarios.scenario_list):
 
         logger.info('Analysing activity ' + scenario.static_analysis_result.activity_name)
         log_id += 1
@@ -90,8 +95,16 @@ def run_scenarios(scenarios, smart_input_results, smart_input_assignment, emulat
         html = templates_service.render_log_analysis_results([log_analysis_result])
         socketio.emit('html', {'html': html}, room=current_user.username)
 
+        if timed_out:
+            remaining_scenarios = scenarios.scenario_list[index+1:]
+            failed_results = [LogAnalysisResult(DynamicAnalysisResult(s, timed_out=True)) for s in remaining_scenarios]
+            if failed_results:
+                html = templates_service.render_log_analysis_results(failed_results)
+                socketio.emit('html', {'html': html}, room=current_user.username)
+
 
 def run_scenario(scenario, scenarios, log_id, emulator_id, smart_input_results, smart_input_assignment):
+    global timed_out
     try:
         with InstalledCertificates(emulator_id, scenario.scenario_settings.sys_certificates):
 
@@ -108,6 +121,10 @@ def run_scenario(scenario, scenarios, log_id, emulator_id, smart_input_results, 
                     time.sleep(5)
 
                     return analyse_log(DynamicAnalysisResult(scenario, log_id))
+    except SoftTimeLimitExceeded:
+        logger.exception("Timed out")
+        timed_out = True
+        return try_analyse_log(DynamicAnalysisResult(scenario, log_id, timed_out=True))
     except Exception:
         logger.exception("Crash during running scenario")
         return analyse_log(DynamicAnalysisResult(scenario, log_id, crashed_on_run=True))

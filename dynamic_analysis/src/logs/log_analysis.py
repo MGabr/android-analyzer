@@ -9,6 +9,17 @@ from src.definitions import LOGS_DIR
 logger = logging.getLogger(__name__)
 
 
+def try_analyse_log(dynamic_analysis_result):
+    log_exists = os.path.isfile(LOGS_DIR + "mitm_proxy_log" + str(dynamic_analysis_result.log_id))
+    strace = dynamic_analysis_result.scenario.scenario_settings.strace
+    network_log_exists = os.path.isfile(LOGS_DIR + "network_monitor_log" + str(dynamic_analysis_result.log_id))
+
+    if log_exists and (not strace or network_log_exists):
+        return analyse_log(dynamic_analysis_result)
+    else:
+        return LogAnalysisResult(dynamic_analysis_result)
+
+
 def analyse_log(dynamic_analysis_result):
     try:
         hosts = get_hosts_w_ips(dynamic_analysis_result)
