@@ -1,3 +1,5 @@
+from common.models.vuln_type import VulnType
+
 
 def subresultrow_id_for_result(srv, r):
     activity_name = "-" + r.activity_name() if r and r.activity_name() else ""
@@ -41,8 +43,12 @@ def row_class_for_result(r):
 def glyphicon_for_static_result(srv):
     if srv.has_activity_to_select() or srv.has_selected_activity():
         return "glyphicon glyphicon-list text-muted"
-    if srv.is_vulnerable() or srv.is_statically_vulnerable():
-        return "glyphicon glyphicon-alert text-danger"
+    elif srv.is_vulnerable() or srv.is_statically_vulnerable():
+        vulntype = _vulntype_for_result(srv)
+        if vulntype in [VulnType.https.value, VulnType.http.value, VulnType.https_http]:
+            return "glyphicon glyphicon-list text-muted"
+        else:
+            return "glyphicon glyphicon-alert text-danger"
     elif srv.static_analysis_running():
         return "glyphicon glyphicon-hourglass text-muted"
     else:
@@ -103,12 +109,24 @@ def vulntype_tooltip_for_result(srv):
             It instead analyses selected activities.
             '''
     elif srv.is_statically_vulnerable():
-        return '''
+        vulntype = _vulntype_for_result(srv)
+        if vulntype in [VulnType.https.value, VulnType.http.value, VulnType.https_http]:
+            return '''
+            The app used the {heuristic} to successfully find entry point activities for static analysis.
+            '''.format(heuristic=vulntype)
+        else:
+            return '''
             The app has a custom implementation of the {clazz} class.<br />
             Such implementations are often vulnerable to MITM attacks.
-            '''.format(clazz=_vulntype_for_result(srv))
+            '''.format(clazz=vulntype)
     else:
-        return '''
+        vulntype = _vulntype_for_result(srv)
+        if vulntype in [VulnType.https.value, VulnType.http.value, VulnType.https_http]:
+            return '''
+            The app did not find any entry point activities using the {heuristic}.
+            '''.format(heuristic=vulntype)
+        else:
+            return '''
             The app has no custom implementation of the {clazz} class.<br />
             Vulnerabilities due to custom implementations of this class can be ruled out.
             '''.format(clazz=_vulntype_for_result(srv))

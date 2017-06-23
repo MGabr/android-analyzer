@@ -228,23 +228,34 @@ class StaticAnalyzer:
         return package, min_sdk_version, target_sdk_version or platform_build_version_code
 
     # Analyses the decoded APK in the given path
-    def analyze_statically(self, apk_path, apk_filename, methods_w_https):
+    def analyze_statically(self, apk_path, apk_filename, methods_w_http):
         package, min_sdk_version, target_sdk_version = self.parse_manifest(apk_path)
         self.process_apk(apk_path)
 
         results = list()
 
-        # add methods with HTTPS URLs to be used as entrypoints
-        for (method, s) in methods_w_https:
+        # add methods with HTTP/S URLs to be used as entrypoints
+        for (method, s) in methods_w_http:
             if method in self.NODES:
-                logger.info("Adding " + VulnType.https.value + " entrypoint " + method)
-                self.VULN.append((method, VulnType.https.value))
+                if "https" in s:
+                    vulntype = VulnType.https.value
+                else:
+                    vulntype = VulnType.http.value
+                logger.info("Adding " + vulntype + " entrypoint " + method)
+                self.VULN.append((method, vulntype))
             else:
                 logger.info("Could not add " + VulnType.https.value + " entrypoint " + method + ". Probably library")
 
         for vuln in set(self.VULN):
             node = self.NODES[vuln[0]]
             results += self.traverse(apk_path, vuln, node, set())
+
+        # also add HTTP and HTTPS vulntype results as HTTPS_HTTP vulntype results
+        http_and_https_results = []
+        for r in results:
+            if r.vuln_type in [VulnType.http.value, VulnType.https.value]:
+                nw = StaticAnalysisResult(r.apk_folder, r.vuln_entry, r.activity_name, r.tag, VulnType.https_http.value)
+                http_and_https_results += [nw]
 
         results = list(set(results))  # eliminate duplicates
 

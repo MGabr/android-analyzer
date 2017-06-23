@@ -41,8 +41,8 @@ def static_analysis_task(apk_name, username):
 
         logger.info('Disassembled APK. Now statically analysing app.')
         apk_analysis = ApkAnalysis(apk_name)
-        methods_w_https = apk_analysis.get_methods_with_https()
-        static_analysis_results = StaticAnalyzer().analyze_statically(disassembled_path, apk_name, methods_w_https)
+        methods_w_http = apk_analysis.get_methods_with_http()
+        static_analysis_results = StaticAnalyzer().analyze_statically(disassembled_path, apk_name, methods_w_http)
         activities = apk_analysis.get_all_activities_results()
 
         static_analysis_results = StaticAnalysisResults(
