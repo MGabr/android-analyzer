@@ -1,20 +1,20 @@
 {% import "macros/_subresultrow.html" as r with context %}
 {% macro result_row(result, rv) -%}
 <tr id="{{ resultrow_id_for_result(result, rv) }}" class="{{ resultrow_class_for_result(result) }}">
-    <td rowspan="{{ result.scenario_result_views|default([''], true)|length }}">{{ result.scenario_settings.name }}</td>
-    <td rowspan="{{ result.scenario_result_views|default([''], true)|length }}">
+    <td rowspan="{{ result.number_of_result_views() }}">{{ result.scenario_settings.name }}</td>
+    <td rowspan="{{ result.number_of_result_views() }}">
         <span class="glyphicon glyphicon-info clickable"
               data-toggle="popover"
               title=""
               data-content="{{ result.scenario_settings.info_message }}"></span>
     </td>
-    <td rowspan="{{ result.scenario_result_views|default([''], true)|length }}">
+    <td rowspan="{{ result.number_of_result_views() }}">
         <span class="{{ glyphicon_for_static_result(result) }} clickable"
               data-toggle="popover"
               title="{{ vulntype_tooltiptitle_for_result(result) }}"
               data-content="{{ vulntype_tooltip_for_result(result) }}"></span>
     </td>
-    <td rowspan="{{ result.scenario_result_views|default([''], true)|length }}">{{ vulntype_for_result(result) }}</td>
+    <td rowspan="{{ result.number_of_result_views() }}">{{ vulntype_for_result(result) }}</td>
     {{ r.get_subresult_row(result, rv) }}
 </tr>
 {%- endmacro %}

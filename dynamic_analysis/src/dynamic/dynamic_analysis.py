@@ -80,6 +80,7 @@ def analyze_dynamically(apk_name, scenarios, smart_input_results, smart_input_as
 def run_scenarios(scenarios, smart_input_results, smart_input_assignment, emulator_id, socketio, current_user):
     global timed_out
     log_id = 0
+    scenario_list_len = len(scenarios.scenario_list)
     for index, scenario in enumerate(scenarios.scenario_list):
 
         logger.info('Analysing activity ' + scenario.static_analysis_result.activity_name)
@@ -92,7 +93,9 @@ def run_scenarios(scenarios, smart_input_results, smart_input_assignment, emulat
             smart_input_results,
             smart_input_assignment)
 
-        html = templates_service.render_log_analysis_results([log_analysis_result])
+        html = templates_service.render_log_analysis_results(
+            [log_analysis_result],
+            total_log_analysis_results_number=scenario_list_len)
         socketio.emit('html', {'html': html}, room=current_user.username)
 
         if timed_out:

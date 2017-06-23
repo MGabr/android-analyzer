@@ -11,11 +11,17 @@ class ApkResultView:
 
 
 class ScenarioSettingsResultView:
-    def __init__(self, scenario_settings, apk_filename, scenario_result_views=None, _static_analysis_running=False):
+    def __init__(self,
+                 scenario_settings,
+                 apk_filename,
+                 scenario_result_views=None,
+                 _static_analysis_running=False,
+                 _number_of_result_views=None):
         self.apk_filename = apk_filename
         self.scenario_settings = scenario_settings
         self.scenario_result_views = scenario_result_views or []
         self._static_analysis_running = _static_analysis_running
+        self._number_of_result_views = _number_of_result_views
 
     def is_vulnerable(self):
         for r in self.scenario_result_views:
@@ -43,6 +49,12 @@ class ScenarioSettingsResultView:
 
     def static_analysis_running(self):
         return self._static_analysis_running
+
+    def number_of_result_views(self):
+        # sometimes (e.g during dynamic analysis) there are updates with only a single scenario_result_view
+        # to not mess up table formatting, rowspan, we need the real number of scenario_result_views
+        # even if they are not included now
+        return self._number_of_result_views or len(self.scenario_result_views or [None])
 
 
 class ScenarioResultView:
@@ -140,14 +152,18 @@ def render_selected_activities(scenarios, scenario_settings_id, current_user):
     return _html_dict(srvs, only_first_as_resultrow=True)
 
 
-def render_log_analysis_results(log_analysis_results):
+def render_log_analysis_results(log_analysis_results, total_log_analysis_results_number=None):
     srvs = list()
     for s in {r.dynamic_analysis_result.scenario.scenario_settings for r in log_analysis_results}:
         log_analysis_results_for_s = [r for r in log_analysis_results
                                       if r.dynamic_analysis_result.scenario.scenario_settings.id == s.id]
         rvs = [ScenarioResultView(log_analysis_result=r) for r in log_analysis_results_for_s]
         apk_filename = log_analysis_results_for_s[0].dynamic_analysis_result.scenario.apk_filename
-        srvs += [ScenarioSettingsResultView(s, apk_filename, scenario_result_views=rvs)]
+        srvs += [ScenarioSettingsResultView(
+            s,
+            apk_filename,
+            scenario_result_views=rvs,
+            _number_of_result_views=total_log_analysis_results_number)]
 
     return _html_dict(srvs)
 
