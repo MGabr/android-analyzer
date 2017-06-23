@@ -10,7 +10,7 @@ from common.db_base import Base
 class ScenarioSettings(Base):
     __tablename__ = 'scenario_settings'
     id = Column(Integer, primary_key=True)
-    name = Column(String(64), unique=True)
+    name = Column(String(64))
     vuln_type = Column(Enum(VulnType))
     mitm_certificate_id = Column(Integer, ForeignKey('certificates.id'))
     mitm_certificate = relationship('Certificate',)

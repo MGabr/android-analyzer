@@ -9,7 +9,7 @@ from common.db_base import Base
 class Certificate(Base):
     __tablename__ = 'certificates'
     id = Column(Integer, primary_key=True)
-    name = Column(String(64), unique=True)
+    name = Column(String(64))
     is_default = Column(Boolean, default=True)
     description = Column(String(2048))
     custom_cert = Column(UnicodeText())
