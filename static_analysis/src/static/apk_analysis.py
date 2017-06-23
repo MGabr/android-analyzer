@@ -47,18 +47,32 @@ class ApkAnalysis:
                 tainted_variables_w_s += [(tainted_variable, s)]
 
         meth_nms_w_s = []
-        for (tainted_variable, s) in tainted_variables_w_s:
+        field_nms_w_s = []
+        for tainted_variable, s in tainted_variables_w_s:
             paths = tainted_variable.get_paths()
             for path in paths:
                 method_idx = path[1]
-                method = self.d.get_cm_method(method_idx)
+                method = self.d.get_method_by_idx(method_idx)
 
-                # format string so that it fits the same format used in static_analysis
-                meth_nm = "%s->%s%s" % (method[0], method[1], method[2][0] + method[2][1])
-                meth_nms_w_s += [(meth_nm, s)]
-                logger.info("Found HTTPS URL in " + meth_nm)
+                method_name = method.get_name()
+                class_name = method.get_class_name()
 
-        return meth_nms_w_s
+                if method_name == "<clinit>":
+                    # this might lead to false positives, since we return all static String fields
+                    fields = self.d.get_fields_class(class_name)
+                    for field in fields:
+                        if field.get_descriptor() == "Ljava/lang/String;" and "static" in field.get_access_flags_string():
+                            # format string so that it fits the same format used in static_analysis
+                            field_nm = "%s->%s:%s" % (class_name, field.get_name(), field.get_descriptor())
+                            field_nms_w_s += [(field_nm, s)]
+                            logger.info("Maybe found HTTPS URL in static field " + field_nm)
+                else:
+                    # format string so that it fits the same format used in static_analysis
+                    meth_nm = "%s->%s%s" % (class_name, method_name, method.get_descriptor())
+                    meth_nms_w_s += [(meth_nm, s)]
+                    logger.info("Found HTTPS URL in method " + meth_nm)
+
+        return meth_nms_w_s + field_nms_w_s
 
     def get_smart_input(self):
         return GetFieldType(self).analyze()

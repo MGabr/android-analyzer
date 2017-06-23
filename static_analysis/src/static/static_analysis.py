@@ -38,6 +38,8 @@ class StaticAnalyzer:
         self.NODES = {}
         # all method names (including class name)
         self.METHODS = set()
+        # names of all static fields of type String (including class name)
+        self.STATIC_FIELDS = set()
         # array of (method name (including class name), method) tuples for each class name
         self.CLASS = {}
         # (method name (including class name), vulnerability type) tuples for all possibly vulnerable overwritten methods
@@ -77,7 +79,6 @@ class StaticAnalyzer:
                     result += self.traverse(apk, vuln, self.NODES[activity_name], seen)
                 elif activity_name in seen:
                     result += self.result_with_tag_from_manifest(apk, vuln, activity_name)
-                # other cases, not seen?
         else:
             for parent in node.parents:
                 p_node = self.NODES[parent]
@@ -109,6 +110,20 @@ class StaticAnalyzer:
 
                         node.add_child(t_inv)
 
+                # add static fields to method call graph - as leaf nodes
+                for sget in re.findall(r"sget-object .*", method):
+                    t_sget = sget.split()[-1]
+                    if t_sget in self.STATIC_FIELDS:
+
+                        if t_sget in self.NODES:
+                            c_node = self.NODES[t_sget]
+                        else:
+                            c_node = Node(t_sget)
+                        c_node.add_parent(meth_name)
+                        self.NODES[t_sget] = c_node
+
+                        node.add_child(t_sget)
+
                 self.NODES[meth_name] = node
 
     def find(self, regex, string):
@@ -123,6 +138,11 @@ class StaticAnalyzer:
 
         class_name = self.find("\.class(.*)", f_content).split()[-1]
         methods = re.findall(r"\.method.*?\.end method", f_content, re.S)
+
+        static_fields = [f.split()[-1] for f in re.findall(r"\.field.*static.*", f_content)]
+        for field in static_fields:
+            field_name = "%s->%s" % (class_name, field)
+            self.STATIC_FIELDS.add(field_name)
 
         trustmanager = re.findall(r"(\.implements Ljavax/net/ssl/X509TrustManager;)", f_content)
         hostnameverifier = re.findall(r"(\.implements Ljavax/net/ssl/HostnameVerifier;)", f_content)
