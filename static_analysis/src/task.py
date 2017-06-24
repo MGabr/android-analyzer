@@ -1,4 +1,5 @@
 import logging
+import os
 from urllib import urlretrieve
 
 from celery import Celery
@@ -86,3 +87,6 @@ def static_analysis_task(apk_name, username):
 
     except Exception as e:
         logger.exception("Static analysis crashed")
+    finally:
+        if os.path.isfile(INPUT_APK_DIR + apk_name + ".apk"):
+            os.remove(INPUT_APK_DIR + apk_name + ".apk")

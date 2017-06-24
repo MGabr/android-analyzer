@@ -1,4 +1,5 @@
 import logging
+import os
 from urllib import urlretrieve
 
 from celery import Celery
@@ -56,3 +57,6 @@ def dynamic_analysis_task(apk_name, scenarios, smart_input_results, username):
 
     except Exception:
         logger.exception("Dynamic analysis crashed")
+    finally:
+        if os.path.isfile(INPUT_APK_DIR + apk_name + ".apk"):
+            os.remove(INPUT_APK_DIR + apk_name + ".apk")
