@@ -7,8 +7,8 @@ from flask_socketio import SocketIO
 from common.dto.scenario import ScenariosData
 from common.dto_dependency_loader import DtoDependencyLoader
 # Imports needed for SQLAlchemy to work
-from common.models import certificate, scenario_settings, sys_certificates_table, user, user_certificates_table
-from common.models.smart_input_assignments import SmartInputAssignment
+from common.models import certificate, scenario_settings, sys_certificates_table, user, user_certificates_table, static_analysis
+from common.models.smart_input import SmartInputAssignment
 from common.models.user import User
 from src.db_base import Session, SQLAlchemyTask
 from src.definitions import INPUT_APK_DIR

@@ -109,10 +109,11 @@ $(document).ready(function(){
                 apk_filename = aselect_id.split(scenario_settings_id + '-')[1];
                 apk_filename = apk_filename.substring(0, apk_filename.lastIndexOf('-'));
 
-                apkActivities[apk_filename] = {
-                    'activities': selected_names,
-                    'scenario_settings_id': scenario_settings_id
-                };
+                console.log("Emitting to socket");
+                socket.emit("activities_analysis", {
+                    "scenario_settings_id": scenario_settings_id,
+                    "activities": selected_names,
+                    "filename": apk_filename});
             }
 
             var updateHtmlCallbackClosure = function (scenario_settings_id, apk_filename) {
@@ -121,7 +122,7 @@ $(document).ready(function(){
                 };
             };
             var updateHtmlCallback = updateHtmlCallbackClosure(scenario_settings_id, apk_filename);
-            updateHtmlCallbacks.push(pollCallback);
+            updateHtmlCallbacks.push(updateHtmlCallback);
 
         }
     }

@@ -60,6 +60,8 @@ def parse_const(instruction):
 class GetFieldType:
 
     def __init__(self, apk_analysis):
+        self.apk = apk_analysis.apk_name
+
         # reuse existing androguard setup from APKAnalysis for better performance
         self.a = apk_analysis.a
         self.d = apk_analysis.d

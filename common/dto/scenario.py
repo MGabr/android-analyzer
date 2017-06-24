@@ -1,6 +1,6 @@
-from common.dto.static_analysis import StaticAnalysisResult
 from common.dto_dependency_loader import asinstanceof, asinstancesof, DtoDependencyLoader
 from common.models.scenario_settings import ScenarioSettings
+from common.models.static_analysis import StaticAnalysisResult
 
 
 class Scenario:

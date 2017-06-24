@@ -1,13 +1,14 @@
+import logging
 import os
 import re
 import sys
 from xml.etree import ElementTree
 
-from common.dto.static_analysis import StaticAnalysisResults, StaticAnalysisResult
+# Imports needed for SQLAlchemy to work
+from common.models import certificate, scenario_settings, sys_certificates_table, user, user_certificates_table, static_analysis
+from common.models.static_analysis import StaticAnalysisResults, StaticAnalysisResult
 from common.models.vuln_type import VulnType
 
-
-import logging
 logger = logging.getLogger(__name__)
 
 

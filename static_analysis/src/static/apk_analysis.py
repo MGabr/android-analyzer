@@ -5,10 +5,10 @@ from androguard.core.analysis.ganalysis import GVMAnalysis
 from androguard.core.bytecodes.apk import APK
 from androguard.core.bytecodes.dvm import DalvikVMFormat
 
+from common.models.static_analysis import StaticAnalysisResult
 from common.models.vuln_type import VulnType
 from src.definitions import INPUT_APK_DIR
 from src.static.smart_input import GetFieldType
-from src.static.static_analysis import StaticAnalysisResult
 
 
 logger = logging.getLogger(__name__)

@@ -110,8 +110,8 @@ def connect_handler():
 
 @socketio.on('activities_analysis')
 @authenticated_only
-def activities_analysis_handler(filename, activities, scenario_settings_id):
-    pass
+def activities_analysis_handler(json):
+    analysis_service.start_activities_analysis(json['filename'], json['activities'], json['scenario_settings_id'])
 
 
 # ---- Api for AJAX calls ----

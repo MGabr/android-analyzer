@@ -15,4 +15,5 @@ class SQLAlchemyTask(celery.Task):
     abstract = True
 
     def after_return(self, status, retval, task_id, args, kwargs, einfo):
+        Session.flush()
         Session.remove()

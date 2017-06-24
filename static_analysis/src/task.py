@@ -7,10 +7,10 @@ from flask_socketio import SocketIO
 # Imports needed for SQLAlchemy to work
 from common.models import certificate, scenario_settings, sys_certificates_table, user, user_certificates_table
 from common.models.user import User
-from common.services import templates_service
+from common.models.smart_input import SmartInputResult
+from common.services import templates_service, scenario_service
 from src.db_base import SQLAlchemyTask, Session
 from src.definitions import INPUT_APK_DIR
-from src.services import scenario_service
 from src.static.apk_analysis import ApkAnalysis
 from src.static.apk_disassembly import disassemble_apk
 from src.static.static_analysis import StaticAnalyzer, StaticAnalysisResults
@@ -62,6 +62,16 @@ def static_analysis_task(apk_name, username):
 
         logger.info('Generated smart input for app. Now getting scenarios for dynamic analysis.')
         scenario_datas = scenario_service.get_all_of_user(static_analysis_results, current_user)
+
+        if scenario_service.has_activities_to_select(static_analysis_results, current_user):
+            logger.info("Saving static analysis and smart input results for activity selection later.")
+            Session.add(static_analysis_results)
+            smart_input_results_json = {clazz: [tf.__json__() for tf in tfs]
+                                        for clazz, tfs in smart_input_results.iteritems()}
+            smart_input_results_db = SmartInputResult(apk_filename=apk_name, result=smart_input_results_json)
+            Session.add(smart_input_results_db)
+            Session.commit()
+
         if scenario_datas:
             logger.info('Starting dynamic analysis tasks.')
             for scenario_data in scenario_datas:

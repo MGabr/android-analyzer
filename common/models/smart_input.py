@@ -1,3 +1,14 @@
+from sqlalchemy import Column, String, JSON
+
+from common.db_base import Base
+
+
+class SmartInputResult(Base):
+    __tablename__ = 'smartinputresult'
+    apk_filename = Column(String(2048), primary_key=True)
+    result = Column(JSON())
+
+
 class SmartInputAssignment:
     def __init__(self):
         self.type_class_ass = {
@@ -34,4 +45,3 @@ class SmartInputAssignment:
 
     def __json__(self):
         return {'type_class_ass': self.type_class_ass, 'type_variation_ass': self.type_variation_ass}
-

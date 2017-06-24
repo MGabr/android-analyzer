@@ -4,6 +4,12 @@ from common.models.vuln_type import VulnType
 from src.services.scenario_settings_service import get_all_enabled_of_user
 
 
+def has_activities_to_select(static_analysis_results, current_user):
+    filtered_result_list = [r for r in static_analysis_results.result_list
+                            if r.vuln_type == VulnType.selected_activities.value]
+    return bool(_get_of(filtered_result_list, static_analysis_results, get_all_enabled_of_user(current_user)))
+
+
 def get_for_choosen_activities_and_settings(
         static_analysis_results,
         choosen_activities,
