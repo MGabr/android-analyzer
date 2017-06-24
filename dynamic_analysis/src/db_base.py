@@ -3,8 +3,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 
+from common import config
 
-engine = create_engine('mysql+mysqldb://root:mypass@mysql/android-analyzer')
+
+engine = create_engine(config.MYSQL_URL)
 
 Base = declarative_base()
 

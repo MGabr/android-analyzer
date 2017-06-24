@@ -4,6 +4,7 @@ from urllib import urlretrieve
 from celery import Celery
 from flask_socketio import SocketIO
 
+from common import config
 # Imports needed for SQLAlchemy to work
 from common.models import certificate, scenario_settings, sys_certificates_table, user, user_certificates_table
 from common.models.user import User
@@ -20,21 +21,21 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-celery = Celery(broker='amqp://admin:mypass@rabbit//')
+celery = Celery(broker=config.RABBITMQ_URL)
 celery.conf.update({
     'CELERY_ROUTES': {'dynamic_analysis_task': {'queue': 'dynamic_queue'}},
     'CELERYD_PREFETCH_MULTIPLIER': 1
 })
 
 
-socketio = SocketIO(message_queue='amqp://admin:mypass@rabbit//', async_mode='threading')
+socketio = SocketIO(message_queue=config.RABBITMQ_URL, async_mode='threading')
 
 
 @celery.task(name='static_analysis_task', base=SQLAlchemyTask)
 def static_analysis_task(apk_name, username):
     try:
         logger.info("Retrieving APK.")
-        urlretrieve('http://webapp:5000/apk/' + apk_name, INPUT_APK_DIR + apk_name + ".apk")
+        urlretrieve(config.WEBAPP_URL + '/apk/' + apk_name, INPUT_APK_DIR + apk_name + ".apk")
 
         logger.info('Disassembling APK.')
         disassembled_path = disassemble_apk(apk_name)
