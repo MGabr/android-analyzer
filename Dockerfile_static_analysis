@@ -1,5 +1,5 @@
 #
-# Dockerfile_dynamic_analysis to build "Android Analyzer Service" container images
+# Dockerfile to build a static analysis task container image for the "Android Analyzer Service"
 #
 FROM ubuntu:16.04
 
@@ -24,10 +24,8 @@ RUN mv apktool_2.2.1.jar apktool.jar
 RUN chmod a+x apktool.jar apktool
 
 # Downloading and installing python dependencies of app
-RUN pip2 install --upgrade pip && pip2 install \
-    enum34 \
-	androguard \
-	celery sqlalchemy flask-socketio
+ADD static_analysis/requirements.txt .
+RUN pip2 install -r requirements.txt
 
 # Get python code
 ADD static_analysis/. .

@@ -1,5 +1,5 @@
 #
-# Dockerfile_dynamic_analysis to build "Android Analyzer Service" container images
+# Dockerfile to build the web app container image for the "Android Analyzer Service"
 #
 FROM ubuntu:16.04
 
@@ -16,14 +16,12 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean
 
 # Downloading and installing python dependencies of app
-RUN pip2 install --upgrade pip && pip2 install \
-	flask Flask-Uploads Flask-Session Flask-Sqlalchemy subprocess32 enum34 Flask-login bcrypt flask-socketio \
-	uwsgi gevent \
-	Flask-Testing \
-	celery
+ADD webapp/requirements.txt .
+RUN pip2 install -r requirements.txt
 
 ADD webapp/. .
 ADD common common
+
 # Setting locale, to prevent errors with special characters
 RUN locale-gen en_US.UTF-8
 ENV LANG en_US.UTF-8

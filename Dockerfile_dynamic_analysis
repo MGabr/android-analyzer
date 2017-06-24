@@ -1,10 +1,12 @@
 #
-# Dockerfile to build "Android Analyzer Service" container images
+# Dockerfile to build a dynamic analysis task container image for the "Android Analyzer Service"
 #
 FROM ubuntu:16.04
 
 MAINTAINER Markus Gabriel e1326657@student.tuwien.ac.at
 
+# Specify which API versions the dynamic analysis should support
+# This influences build time a lot and also image size!
 ARG API_VERSIONS=
 
 # Installing required linux packages
@@ -57,14 +59,12 @@ RUN export IFS=","; for API in $API_VERSIONS; \
         fi; \
     done
 
-# Downloading and installing python dependencies of app
-RUN pip2 install --upgrade pip && pip2 install \
-    subprocess32  enum34 \
-	git+https://github.com/MGabr/AndroidViewClient.git \
-	celery sqlalchemy flask-socketio
-
 # Downloading and installing mitmproxy
-RUN pip2 install --upgrade pip && pip2 install mitmproxy==0.18.2
+RUN pip2 install mitmproxy==0.18.2
+
+# Downloading and installing python dependencies of app
+ADD dynamic_analysis/requirements.txt .
+RUN pip2 install -r requirements.txt
 
 # Get python code
 ADD dynamic_analysis/. .
