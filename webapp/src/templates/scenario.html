@@ -51,7 +51,8 @@
                 </option>
             {% endfor %}
         </select>
-        <label for="user_certificates">User trusted certificates</label>
+
+        <!-- <label for="user_certificates">User trusted certificates</label>
         <select multiple class="form-control" id="user_certificates" name="user_certificates"
                 {% if sc.is_default %}disabled{% endif %}>
             <option></option>
@@ -60,7 +61,7 @@
                     {{ cert.name }}
                 </option>
             {% endfor %}
-        </select>
+        </select> -->
 
         <label for="info_message">Info message</label>
         <textarea class="form-control" id="info_message" name="info_message" rows="3"

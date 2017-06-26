@@ -23,7 +23,7 @@ def edit(id, form):
         scenario.vuln_type = VulnType(form['vuln_type'])
         scenario.mitm_certificate = mitm_certificate
         scenario.sys_certificates = sys_certificates
-        scenario.user_certificates = user_certificates
+        # scenario.user_certificates = user_certificates
         scenario.info_message = form.get('info_message')
         scenario.report_http = 'report_http' in form
         scenario.strace = 'strace' in form
@@ -46,7 +46,7 @@ def add(form):
         vuln_type=VulnType(form['vuln_type']),
         mitm_certificate=mitm_certificate,
         sys_certificates=sys_certificates,
-        user_certificates=user_certificates,
+        # user_certificates=user_certificates,
         info_message=form.get('info_message'),
         is_default=False,
         enabled='enabled' in form,
@@ -96,9 +96,9 @@ def _get_scenario_certificates(form):
     else:
         sys_certificates = []
 
-    if 'user_certificates' in form:
-        user_certificates = Certificate.query.filter(Certificate.id.in_(form.getlist('user_certificates'))).all()
-    else:
-        user_certificates = []
+    # if 'user_certificates' in form:
+    #     user_certificates = Certificate.query.filter(Certificate.id.in_(form.getlist('user_certificates'))).all()
+    # else:
+    user_certificates = []
 
     return mitm_certificate, sys_certificates, user_certificates
