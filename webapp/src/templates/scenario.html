@@ -45,7 +45,7 @@
         <select multiple class="form-control" id="sys_certificates" name="sys_certificates"
                 {% if sc.is_default %}disabled{% endif %}>
             <option disabled></option>
-            {% for cert in certs %}
+            {% for cert in sys_certs %}
                 <option value="{{ cert.id }}" {% if cert.id in sc.get_sys_certificates_ids() %}selected{% endif %}>
                     {{ cert.name }}
                 </option>

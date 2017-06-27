@@ -63,7 +63,8 @@ def show_scenario(id):
                            new=new,
                            sc=sc,
                            vuln_types=[v for v in VulnType],
-                           certs=certificate_service.get_all_of_user())
+                           certs=certificate_service.get_all_of_user(),
+                           sys_certs=certificate_service.get_all_possible_sys_of_user())
 
 
 @app.route('/certificate/<id>', methods=['GET'])

@@ -1,8 +1,9 @@
 from flask_login import current_user
-from src.app import db
+
 from common.models.certificate import Certificate
 from common.models.scenario_settings import ScenarioSettings
 from common.models.vuln_type import VulnType
+from src.app import db
 from src.services.errors import check_form, EntityNotExistsError, FieldExistsError
 
 required_fields = ['name', 'vuln_type', 'mitm_certificate']
@@ -74,10 +75,10 @@ def delete(id):
 
 
 def get_of_user(id, current_user=current_user):
-    scenario = ScenarioSettings.query.get(id)
-    if not scenario.is_default and not scenario.user == current_user:
+    scenarios = [s for s in current_user.scenarios]
+    if not scenarios:
         raise EntityNotExistsError('ScenarioSettings', id)
-    return scenario
+    return scenarios[0]
 
 
 def get_all_of_user(current_user=current_user):

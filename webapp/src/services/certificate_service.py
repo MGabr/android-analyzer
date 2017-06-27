@@ -1,9 +1,7 @@
-import os
-
 from flask_login import current_user
 
-from src.app import db
 from common.models.certificate import Certificate
+from src.app import db
 from src.services.errors import check_form, FieldExistsError, EntityNotExistsError
 
 required_fields = ['name']
@@ -61,14 +59,15 @@ def delete(id):
 
 
 def get_of_user(id):
-    certificate = Certificate.query.get(id)
-    if not certificate.is_default and not certificate.user == current_user:
+    certificates = [c for c in current_user.certificates]
+    if not certificates:
         raise EntityNotExistsError('Certificate', id)
-    return certificate
+    return certificates[0]
 
 
 def get_all_of_user():
-    default_certs = Certificate.query.filter(Certificate.is_default).all()
-    if current_user.is_anonymous:
-        return default_certs
-    return current_user.certificates + default_certs
+    return current_user.certificates
+
+
+def get_all_possible_sys_of_user():
+    return [c for c in current_user.certificates if c.custom_ca]
