@@ -46,7 +46,7 @@ class ApkAnalysis:
             if "https://" in s or "http://" in s:
                 tainted_variables_w_s += [(tainted_variable, s)]
 
-        clinit_of_class = dict()
+        clinit_idxs_of_class = dict()
         meth_nms_w_s = []
         for tainted_variable, s in tainted_variables_w_s:
             paths = tainted_variable.get_paths()
@@ -59,7 +59,9 @@ class ApkAnalysis:
                 class_name = method.get_class_name()
 
                 if method_name == "<clinit>":
-                    clinit_of_class[class_name] = (tainted_variable, s, idx)
+                    if class_name not in clinit_idxs_of_class:
+                        clinit_idxs_of_class[class_name] = []
+                    clinit_idxs_of_class[class_name] += [(idx, s)]
                 else:
                     # format string so that it fits the same format used in static_analysis
                     meth_nm = "%s->%s%s" % (class_name, method_name, method.get_descriptor())
@@ -69,8 +71,7 @@ class ApkAnalysis:
         field_nms_w_s = []
         for tainted_variable, f in self.dx.get_tainted_fields():
             class_name = f.split(";")[0] + ";"
-            if class_name in clinit_of_class:
-                s_tainted_variable, s, s_idx = clinit_of_class[class_name]
+            if class_name in clinit_idxs_of_class:
 
                 paths = tainted_variable.get_paths()
                 for path in paths:
@@ -85,13 +86,14 @@ class ApkAnalysis:
                         # this does not check that both instructions refer to the same var (e.g. v0)
                         # therefore there might be some false positives / negatives
                         # this is however better than just using ALL static fields of a clinit with a HTTP/s string
-                        if idx == s_idx + 4:
-                            field_name = f.split(";")[2]
-                            descriptor = f.split(";")[1] + ";"
-                            # format string so that it fits the same format used in static_analysis
-                            field_nm = "%s->%s:%s" % (class_name, field_name, descriptor)
-                            field_nms_w_s += [(field_nm, s)]
-                            logger.info("Found HTTP/S URL in static field " + field_nm)
+                        for s_idx,s in clinit_idxs_of_class[class_name]:
+                            if idx == s_idx + 4:
+                                field_name = f.split(";")[2]
+                                descriptor = f.split(";")[1] + ";"
+                                # format string so that it fits the same format used in static_analysis
+                                field_nm = "%s->%s:%s" % (class_name, field_name, descriptor)
+                                field_nms_w_s += [(field_nm, s)]
+                                logger.info("Found HTTP/S URL in static field " + field_nm)
 
         return meth_nms_w_s + field_nms_w_s
 
