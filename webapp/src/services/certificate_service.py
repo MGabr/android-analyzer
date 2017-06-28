@@ -59,7 +59,7 @@ def delete(id):
 
 
 def get_of_user(id):
-    certificates = [c for c in current_user.certificates]
+    certificates = [c for c in current_user.certificates if c.id == int(id)]
     if not certificates:
         raise EntityNotExistsError('Certificate', id)
     return certificates[0]

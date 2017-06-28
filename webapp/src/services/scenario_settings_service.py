@@ -75,7 +75,7 @@ def delete(id):
 
 
 def get_of_user(id, current_user=current_user):
-    scenarios = [s for s in current_user.scenarios]
+    scenarios = [s for s in current_user.scenarios if s.id == int(id)]
     if not scenarios:
         raise EntityNotExistsError('ScenarioSettings', id)
     return scenarios[0]

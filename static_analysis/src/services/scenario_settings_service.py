@@ -1,5 +1,5 @@
 def get_of_user(id, current_user):
-    scenarios = [s for s in current_user.scenarios if s.id == id]
+    scenarios = [s for s in current_user.scenarios if s.id == int(id)]
     return scenarios[0] if scenarios else None
 
 
