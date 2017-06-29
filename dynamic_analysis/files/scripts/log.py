@@ -18,7 +18,6 @@ class Logger:
 
         if flow.client_conn.tls_established:
             with open(self.logfile, "a") as logfile:
-                logfile.write("server_conn address: " + flow.server_conn.address.host + "\n")
                 if flow.server_conn.ip_address:
                     logfile.write("host: " + flow.request.pretty_host + ",ip: " + flow.server_conn.ip_address.host + "\n")
                 elif flow.server_conn.address:

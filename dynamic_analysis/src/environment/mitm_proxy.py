@@ -56,7 +56,7 @@ class MitmProxy:
             try:
                 self.process.wait(timeout=10)
             except subprocess.TimeoutExpired as e:
-                logger.exception("Could not close network monitor")
+                logger.exception("Could not close mitm proxy")
             except OSError as e:
                 logger.warn(e)
 

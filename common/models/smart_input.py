@@ -13,10 +13,10 @@ class SmartInputAssignment:
     def __init__(self):
         self.type_class_ass = {
             'TYPE_NULL': '',
-            'TYPE_CLASS_TEXT': '',
-            'TYPE_CLASS_NUMBER': '',
-            'TYPE_CLASS_PHONE': '',
-            'TYPE_CLASS_DATETIME': ''
+            'TYPE_CLASS_TEXT': 'example',
+            'TYPE_CLASS_NUMBER': '1',
+            'TYPE_CLASS_PHONE': '06601111111',
+            'TYPE_CLASS_DATETIME': '01011970'
         }
         self.type_variation_ass = {
             'TYPE_TEXT_VARIATION_NORMAL': 'example',
@@ -38,9 +38,9 @@ class SmartInputAssignment:
             'TYPE_NUMBER_VARIATION_NORMAL': '12',
             'TYPE_NUMBER_VARIATION_PASSWORD': '1234',
 
-            'TYPE_DATETIME_VARIATION_NORMAL': '',
-            'TYPE_DATETIME_VARIATION_DATE': '',
-            'TYPE_DATETIME_VARIATION_TIME': ''
+            'TYPE_DATETIME_VARIATION_NORMAL': '01011970',
+            'TYPE_DATETIME_VARIATION_DATE': '01011970',
+            'TYPE_DATETIME_VARIATION_TIME': '000000'
         }
 
     def __json__(self):
