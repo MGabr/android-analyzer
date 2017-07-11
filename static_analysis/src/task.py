@@ -52,6 +52,9 @@ def static_analysis_task(apk_name, username):
 
         logger.info('Analysed app statically, now getting scenarios for dynamic analysis and sending html.')
         current_user = Session.query(User).filter(User.username == username).one()
+        html = templates_service.render_static_analysis_results(static_analysis_results, current_user)
+        socketio.emit('html', {'html': html}, room=username)
+
         scenario_datas = scenario_service.get_all_of_user(static_analysis_results, current_user)
         html = templates_service.render_scenario_datas(scenario_datas)
         socketio.emit('html', {'html': html}, room=username)

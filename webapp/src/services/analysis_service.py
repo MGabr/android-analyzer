@@ -15,7 +15,7 @@ def start_analysis(files):
     if 'apks' in files:
         filenames = []
         for file in files.getlist('apks'):
-            file.filename = file.filename.replace('.', '_')[:-len('_apk')] + '.apk'
+            file.filename = file.filename.replace('.', '_').replace(' ', '_')[:-len('_apk')] + '.apk'
             filenames += [apks.save(file, name=file.filename).replace('.apk', '')]
 
         for filename in filenames:
