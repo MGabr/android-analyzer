@@ -29,12 +29,18 @@ def get_all_of_user(static_analysis_results, current_user):
 def _get_of(static_analysis_result_list, static_analysis_results, scenario_settings):
     scenario_datas = []
     for scenario_setting in scenario_settings:
-        # get only static analysis results with the right vulnerability type
         scenarios = []
+
+        # get only static analysis results with the right vulnerability type
         for static_analysis_result in static_analysis_result_list:
             if static_analysis_result.vuln_type == scenario_setting.vuln_type.value:
                 scenarios += [Scenario(scenario_setting, static_analysis_results.apk_filename, static_analysis_result)]
+
         if scenarios:
+            # only analyse the first num_activities_limit scenarios
+            if scenario_setting.num_activities_limit:
+                scenarios = scenarios[:scenario_setting.num_activities_limit]
+
             scenario_datas += [ScenariosData(
                 scenarios,
                 static_analysis_results.apk_filename,

@@ -15,7 +15,8 @@ def start_analysis(files):
     if 'apks' in files:
         filenames = []
         for file in files.getlist('apks'):
-            filenames += [apks.save(file).replace('.apk', '')]
+            file.filename = file.filename.replace('.', '_')[:-len('_apk')] + '.apk'
+            filenames += [apks.save(file, name=file.filename).replace('.apk', '')]
 
         for filename in filenames:
             celery.send_task('static_analysis_task', args=[filename, current_user.username], task_id=filename)
@@ -26,12 +27,10 @@ def start_analysis(files):
 
 
 def start_activities_analysis(filename, activities, scenario_settings_id):
-    logger.info("start activities analysis")
     static_analysis_results = StaticAnalysisResults.query.get(filename)
     smart_input_results = SmartInputResult.query.get(filename)
     if smart_input_results:
         smart_input_results = smart_input_results.result
-        logger.info("smart_input_results")
 
         scenario_datas = scenario_service.get_for_choosen_activities_and_settings(
             static_analysis_results,
@@ -39,7 +38,6 @@ def start_activities_analysis(filename, activities, scenario_settings_id):
             scenario_settings_id,
             current_user)
         if scenario_datas:
-            logger.info("scenario_datas")
 
             scenario_data = scenario_datas[0]
 

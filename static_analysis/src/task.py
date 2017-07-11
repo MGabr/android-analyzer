@@ -46,23 +46,20 @@ def static_analysis_task(apk_name, username):
         apk_analysis = ApkAnalysis(apk_name)
         activities = apk_analysis.get_all_activities_results()
 
-        static_analysis_results = StaticAnalysisResults(
-            static_analysis_results.apk_filename,
-            static_analysis_results.package,
-            static_analysis_results.min_sdk_version,
-            static_analysis_results.target_sdk_version,
+        static_analysis_results = as_combined_static_analysis_results(
+            static_analysis_results,
             static_analysis_results.result_list + activities)
 
-        logger.info('Analysed app statically, now sending html to socket')
+        logger.info('Analysed app statically, now getting scenarios for dynamic analysis and sending html.')
         current_user = Session.query(User).filter(User.username == username).one()
-        html = templates_service.render_static_analysis_results(static_analysis_results, current_user)
+        scenario_datas = scenario_service.get_all_of_user(static_analysis_results, current_user)
+        html = templates_service.render_scenario_datas(scenario_datas)
         socketio.emit('html', {'html': html}, room=username)
 
         logger.info('Sent html to socket. Now generating smart input for app.')
         smart_input_results = apk_analysis.get_smart_input()
 
-        logger.info('Generated smart input for app. Now getting scenarios for dynamic analysis.')
-        scenario_datas = scenario_service.get_all_of_user(static_analysis_results, current_user)
+        logger.info('Generated smart input for app.')
 
         if scenario_service.has_activities_to_select(static_analysis_results, current_user):
             logger.info("Saving static analysis and smart input results for activity selection later.")
@@ -89,3 +86,12 @@ def static_analysis_task(apk_name, username):
     finally:
         if os.path.isfile(INPUT_APK_DIR + apk_name + ".apk"):
             os.remove(INPUT_APK_DIR + apk_name + ".apk")
+
+
+def as_combined_static_analysis_results(r, combined_result_list):
+    return StaticAnalysisResults(
+        r.apk_filename,
+        r.package,
+        r.min_sdk_version,
+        r.target_sdk_version,
+        combined_result_list)

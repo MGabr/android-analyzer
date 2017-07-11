@@ -126,15 +126,18 @@ def render_all_scenario_settings(filenames, current_user):
     return full_html
 
 
-def render_static_analysis_results(static_analysis_results, current_user):
+def render_scenario_datas(scenario_datas):
     srvs = list()
-    scenarios = scenario_settings_service.get_all_enabled_of_user(current_user)
-    for s in scenarios:
-        result_list_for_s = [r for r in static_analysis_results.result_list if r.vuln_type == s.vuln_type.value]
-        rvs = [ScenarioResultView(static_analysis_result=r,
-                                  _dynamic_analysis_running=r.vuln_type != VulnType.selected_activities.value)
-               for r in result_list_for_s]
-        srvs += [ScenarioSettingsResultView(s, static_analysis_results.apk_filename, scenario_result_views=rvs)]
+    for scenario_data in scenario_datas:
+        rvs = [ScenarioResultView(
+            static_analysis_result=r.static_analysis_result,
+            _dynamic_analysis_running=r.static_analysis_result.vuln_type != VulnType.selected_activities.value)
+               for r in scenario_data.scenario_list]
+
+        srvs += [ScenarioSettingsResultView(
+            scenario_data.scenario_list[0].scenario_settings,
+            scenario_data.apk_filename,
+            scenario_result_views=rvs)]
 
     return _html_dict(srvs, only_first_as_resultrow=True)
 

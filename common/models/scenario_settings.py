@@ -23,6 +23,7 @@ class ScenarioSettings(Base):
     info_message = Column(String(2048))
     is_default = Column(Boolean, default=True)
     enabled = Column(Boolean, default=True)
+    num_activities_limit = Column(Integer)
     report_http = Column(Boolean, default=True)
     strace = Column(Boolean, default=False)
     add_upstream_certs = Column(Boolean, default=False)
@@ -46,6 +47,7 @@ class ScenarioSettings(Base):
             'info_message': self.info_message,
             'is_default': self.is_default,
             'enabled': self.enabled,
+            'num_activities_limit': self.num_activities_limit,
             'report_http': self.report_http,
             'strace': self.strace,
             'add_upstream_certs': self.add_upstream_certs,
