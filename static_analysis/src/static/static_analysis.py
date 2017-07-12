@@ -43,7 +43,7 @@ class StaticAnalyzer:
         self.CLASS = {}
         # (method name (including class name), vulnerability type) tuples for all possibly vulnerable overwritten methods
         self.VULN = set()
-        # dict of the name attributes of the Android Manifest and the tags of the corresponding xml elements
+        # dict of the name attributes of the Android Manifest and the (tag, 'exported' attribute) tuples of the corresponding xml elements
         self.MANIFEST = {}
 
     def result_with_tag_from_manifest(self, apk_folder, vuln, mth_nm):
@@ -56,8 +56,8 @@ class StaticAnalyzer:
         cls_nm = cls_nm.replace("/", ".")
 
         result = set()
-        for name_attrib,tag in self.MANIFEST.iteritems():
-            if tag == 'activity' and cls_nm == name_attrib:
+        for name_attrib, (tag, exported) in self.MANIFEST.iteritems():
+            if cls_nm == name_attrib and tag == 'activity' and exported:
                 result.add(StaticAnalysisResult(apk_folder, vuln[0], cls_nm, vuln[1]))
 
         return result
@@ -236,6 +236,9 @@ class StaticAnalyzer:
         platform_build_version_code = None
 
         for child in tree.iter():
+            android_name = None
+            exported_name = None
+
             for attrib_name,attrib_value in child.attrib.iteritems():
 
                 # get value of only android:name attribute name
@@ -243,7 +246,10 @@ class StaticAnalyzer:
                     if attrib_value.startswith("."):
                         # prepend package name
                         attrib_value = "%s%s" % (package, attrib_value)
-                    self.MANIFEST[attrib_value] = child.tag
+                    android_name = attrib_value
+
+                if "{http://schemas.android.com/apk/res/android}exported" in attrib_name:
+                    exported_name = attrib_value
 
                 if "{http://schemas.android.com/apk/res/android}minSdkVersion" in attrib_name:
                     min_sdk_version = attrib_value
@@ -253,6 +259,9 @@ class StaticAnalyzer:
 
                 if "platformBuildVersionCode" in attrib_name:
                     platform_build_version_code = attrib_value
+
+            if android_name:
+                self.MANIFEST[android_name] = child.tag, bool(exported_name == 'true')
 
         return package, min_sdk_version, target_sdk_version or platform_build_version_code
 
