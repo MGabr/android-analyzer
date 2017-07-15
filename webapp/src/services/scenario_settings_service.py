@@ -30,6 +30,7 @@ def edit(id, form):
         scenario.report_http = 'report_http' in form
         scenario.strace = 'strace' in form
         scenario.add_upstream_certs = 'add_upstream_certs' in form
+        scenario.only_exported_activities = 'only_exported_activities' in form
 
     db.session.commit()
 
@@ -55,7 +56,8 @@ def add(form):
         enabled='enabled' in form,
         report_http='report_http' in form,
         strace='strace' in form,
-        add_upstream_certs='add_upstream_certs' in form
+        add_upstream_certs='add_upstream_certs' in form,
+        only_exported_activities='only_exported_activities' in form
     )
 
     db.session.add(scenario)

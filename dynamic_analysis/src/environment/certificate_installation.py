@@ -71,10 +71,6 @@ def install_as_system_certificate(emulator_id, cert):
     subprocess.check_call(cmd, shell=True)
     os.remove(cert_filename)
 
-    cmd = "adb -s " + emulator_id + " root"
-    logger.debug(cmd)
-    subprocess.check_call(cmd, shell=True)
-
     cmd = "adb -s " + emulator_id + " remount"
     logger.debug(cmd)
     subprocess.check_call(cmd, shell=True)

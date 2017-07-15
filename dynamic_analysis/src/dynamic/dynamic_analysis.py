@@ -1,6 +1,6 @@
 import logging
 import re
-import subprocess
+import subprocess32 as subprocess
 import time
 
 from celery.exceptions import SoftTimeLimitExceeded
@@ -35,10 +35,15 @@ def analyze_dynamically(apk_name, scenarios, smart_input_results, smart_input_as
         # ==== Setup ====
         emulator_id = DeviceManager.get_emulator(scenarios.min_sdk_version, scenarios.target_sdk_version)
 
+        start_adb_as_root(emulator_id)
         install_apk(emulator_id, apk_path)
         installed = True
 
         start_app(emulator_id, scenarios.package)
+
+        # skip possible welcome screens at first time
+        press_enter(emulator_id)
+        press_enter(emulator_id)
         # ==== ===== ====
 
         time.sleep(1)
@@ -63,7 +68,10 @@ def analyze_dynamically(apk_name, scenarios, smart_input_results, smart_input_as
     finally:
         # ==== Shutdown ====
         if installed:
-            uninstall_apk(emulator_id, scenarios.package)
+            try:
+                uninstall_apk(emulator_id, scenarios.package)
+            except Exception:
+                pass
 
         DeviceManager.shutdown_emulator()
 
@@ -118,7 +126,7 @@ def run_scenario(scenario, scenarios, log_id, emulator_id, smart_input_results, 
 
                 with NetworkMonitor(scenario.scenario_settings.strace, emulator_id, scenarios.package, log_id):
 
-                    run_ui_traversal(scenario, emulator_id, smart_input_results, smart_input_assignment)
+                    run_ui_traversal(scenario, scenarios, emulator_id, smart_input_results, smart_input_assignment)
 
                     # wait before shutting down mitmproxy since there might be a last request caused by ui traversal
                     time.sleep(5)
@@ -133,14 +141,12 @@ def run_scenario(scenario, scenarios, log_id, emulator_id, smart_input_results, 
         return analyse_log(DynamicAnalysisResult(scenario, log_id, crashed_on_run=True))
 
 
-def run_ui_traversal(scenario, emulator_id, smart_input_results, smart_input_assignment):
+def run_ui_traversal(scenario, scenarios, emulator_id, smart_input_results, smart_input_assignment):
     smart_input_for_activity = smart_input_results.get(scenario.static_analysis_result.activity_name)
 
-    # reset the window, press enter two times
-    press_enter(emulator_id)
-    press_enter(emulator_id)
+    start_app(emulator_id, scenarios.package)
 
-    start_activity(emulator_id, scenario.static_analysis_result.activity_name)
+    start_activity(emulator_id, scenarios.package, scenario.static_analysis_result.activity_name)
 
     device, serialno = ViewClient.connectToDeviceOrExit(serialno=emulator_id)
     vc = ViewClient(device, serialno, autodump=False)
@@ -219,16 +225,22 @@ def click_clickable_views(clickable_views, vc, device, emulator_id):
                     break
 
 
+def start_adb_as_root(emulator_id):
+    cmd = "adb -s " + emulator_id + " root"
+    logger.debug(cmd)
+    subprocess.check_call(cmd, shell=True)
+
+
 def install_apk(emulator_id, apk_path):
-    cmd = "adb -s " + emulator_id + " install " + apk_path
+    cmd = "adb -s " + emulator_id + " install \"" + apk_path + "\""
     logger.debug(cmd)
     subprocess.check_call(cmd, shell=True)
 
 
 def start_app(emulator_id, package_name):
-    cmd = "adb -s " + emulator_id + " shell monkey -p " + package_name + " 1"
+    cmd = "adb -s " + emulator_id + " shell monkey -p " + package_name + " -c android.intent.category.LAUNCHER 1"
     logger.debug(cmd)
-    subprocess.check_call(cmd, shell=True)
+    subprocess.check_call(cmd, shell=True, timeout=30)
 
 
 def press_enter(emulator_id):
@@ -237,12 +249,11 @@ def press_enter(emulator_id):
     subprocess.check_call(cmd, shell=True)
 
 
-def start_activity(emulator_id, activity_name):
-    last_dot = activity_name.rindex('.')
-    component_name = activity_name[:last_dot] + "/" + activity_name[last_dot:]
-    cmd = "adb -s " + emulator_id + " shell am start -W -n " + component_name
+def start_activity(emulator_id, package_name, activity_name):
+    component_name = package_name + "/" + activity_name
+    cmd = "adb -s " + emulator_id + " shell am start -W --user 0 -n " + component_name + ''
     logger.debug(cmd)
-    subprocess.check_call(cmd, shell=True)
+    subprocess.check_call(cmd, shell=True, timeout=30)
 
 
 def uninstall_apk(emulator_id, package_name):
@@ -260,12 +271,13 @@ def press_back(emulator_id):
 def get_smart_input_for_edittext(edittext_id, smart_input_for_activity, smart_input_ass):
     edittext_name = re.match(".*id/(.*)$", edittext_id).group(1)
 
-    for text_field in smart_input_for_activity:
-        if text_field.name == edittext_name:
-            if text_field.type_class:
-                if text_field.type_variation:
-                    return smart_input_ass.type_variation_ass[text_field.type_variation]
-                else:
-                    return smart_input_ass.type_class_ass[text_field.type_class]
-    return None  # TODO: what to do here?
+    if smart_input_for_activity:
+        for text_field in smart_input_for_activity:
+            if text_field.name == edittext_name:
+                if text_field.type_class:
+                    if text_field.type_variation:
+                        return smart_input_ass.type_variation_ass[text_field.type_variation]
+                    else:
+                        return smart_input_ass.type_class_ass[text_field.type_class]
+    return "fallbackinput"
 

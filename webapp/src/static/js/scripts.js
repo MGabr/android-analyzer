@@ -26,7 +26,13 @@ $(document).ready(function(){
     // on successful setup, the APK is uploaded
     function ajaxUploadForAnalysis(e) {
         if (!socket) {
-            socket = io.connect(null, {'port': location.port, rememberTransport: false});
+            socket = io.connect(null, {
+                'port': location.port,
+                rememberTransport: false,
+                'reconnection': true,
+                'reconnectionDelay': 500,
+                'reconnectionAttempts': 10
+            });
             socket.on('html', updateHtml);
             socket.on('connect', doAjaxUploadForAnalysis.bind(this));
         } else {

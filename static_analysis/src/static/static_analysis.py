@@ -57,8 +57,8 @@ class StaticAnalyzer:
 
         result = set()
         for name_attrib, (tag, exported) in self.MANIFEST.iteritems():
-            if cls_nm == name_attrib and tag == 'activity' and exported:
-                result.add(StaticAnalysisResult(apk_folder, vuln[0], cls_nm, vuln[1]))
+            if cls_nm == name_attrib and tag == 'activity':
+                result.add(StaticAnalysisResult(apk_folder, vuln[0], cls_nm, vuln[1], exported))
 
         return result
 
@@ -281,7 +281,7 @@ class StaticAnalyzer:
         addtl_results = set()
         for r in results:
             if r.vuln_type in [VulnType.http.value, VulnType.https.value]:
-                nw = StaticAnalysisResult(r.apk_folder, r.vuln_entry, r.activity_name, VulnType.https_http.value)
+                nw = StaticAnalysisResult(r.apk_folder, r.vuln_entry, r.activity_name, VulnType.https_http.value, r.exported)
                 addtl_results |= {nw}
 
         results |= addtl_results

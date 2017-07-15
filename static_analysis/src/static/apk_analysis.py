@@ -37,7 +37,7 @@ class ApkAnalysis:
 
     def get_all_activities_results(self):
         activity_names = self.a.get_activities()
-        return [StaticAnalysisResult(self.apk_name, None, a, VulnType.selected_activities.value)
+        return [StaticAnalysisResult(self.apk_name, None, a, VulnType.selected_activities.value, True)
                 for a in activity_names]
 
     def get_smart_input(self):

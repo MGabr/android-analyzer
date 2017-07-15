@@ -11,7 +11,7 @@ DIR = os.path.dirname(os.path.abspath(__file__))
 def disassemble_apk(apk_name):
     input_apk = INPUT_APK_DIR + apk_name + ".apk"
     output_path = DECODED_APK_DIR + apk_name
-    cmd = DIR + "/apktool d -f " + input_apk + " -o " + output_path
+    cmd = DIR + "/apktool d -f \"" + input_apk + "\" -o \"" + output_path + "\""
     logger.debug(cmd)
     subprocess.check_call(cmd, shell=True)
     return output_path

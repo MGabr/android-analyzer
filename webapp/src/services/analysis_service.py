@@ -1,12 +1,12 @@
+import logging
+import re
+
 from flask_login import current_user
 
-from common.services import templates_service, scenario_service
 from common.models.smart_input import SmartInputResult
 from common.models.static_analysis import StaticAnalysisResults
+from common.services import templates_service, scenario_service
 from src.app import celery, apks, socketio
-
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ def start_analysis(files):
     if 'apks' in files:
         filenames = []
         for file in files.getlist('apks'):
-            file.filename = file.filename.replace('.', '_').replace(' ', '_')[:-len('_apk')] + '.apk'
+            file.filename = re.sub('[^a-zA-Z0-9_]+', '_', file.filename)[:-len('_apk')] + '.apk'
             filenames += [apks.save(file, name=file.filename).replace('.apk', '')]
 
         for filename in filenames:

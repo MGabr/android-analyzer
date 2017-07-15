@@ -27,6 +27,7 @@ class ScenarioSettings(Base):
     report_http = Column(Boolean, default=True)
     strace = Column(Boolean, default=False)
     add_upstream_certs = Column(Boolean, default=False)
+    only_exported_activities = Column(Boolean, default=False)
     user_id = Column(String(64), ForeignKey('users.username'))
     user = relationship('User', back_populates='scenarios')
 
@@ -51,4 +52,5 @@ class ScenarioSettings(Base):
             'report_http': self.report_http,
             'strace': self.strace,
             'add_upstream_certs': self.add_upstream_certs,
+            'only_exported_activities': self.only_exported_activities,
             'user': self.user}

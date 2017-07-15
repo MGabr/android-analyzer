@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 
 from common.db_base import Base
@@ -37,12 +37,14 @@ class StaticAnalysisResult(Base):
     activity_name = Column(String(2048))
     vuln_type = Column(String(64))
     results_id = Column(String(2048), ForeignKey('staticanalysisresults.apk_filename'))
+    exported = Column(Boolean)
 
-    def __init__(self, apk_folder, vuln_entry, activity_name, vuln_type):
+    def __init__(self, apk_folder, vuln_entry, activity_name, vuln_type, exported):
         self.apk_folder = apk_folder
         self.vuln_entry = vuln_entry
         self.activity_name = activity_name
         self.vuln_type = vuln_type
+        self.exported = exported
 
     def __json__(self):
         return {
@@ -51,7 +53,9 @@ class StaticAnalysisResult(Base):
             'activity_name': self.activity_name,
             'vuln_type': {
                 'value': self.vuln_type
-            }}
+            },
+            'exported': self.exported
+        }
 
     def __key(self):
         return (self.apk_folder, self.activity_name, self.vuln_type)

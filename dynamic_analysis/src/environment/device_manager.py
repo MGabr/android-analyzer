@@ -26,8 +26,8 @@ class DeviceManager:
         logger.debug(cmd)
         subprocess.check_call(cmd, shell=True)
 
-        _wait_until_boot_completed(cls.emulator_id)
         cls.is_running = True
+        _wait_until_boot_completed(cls.emulator_id)
 
         return cls.emulator_id
 
@@ -43,21 +43,28 @@ class DeviceManager:
 def _get_fitting_sdk_version(min_sdk_version, target_sdk_version):
     available_versions = os.environ['API_VERSIONS'].split(',')
     ordered_available_versions = sorted([int(a) for a in available_versions], reverse=True)
-    preferred_versions = range(int(min_sdk_version or target_sdk_version), int(target_sdk_version) + 1)
+    if not min_sdk_version and not target_sdk_version:
+        logger.error("No fitting API version: No min_sdk_version or target_sdk_version")
+
+    preferred_versions = range(
+        int(min_sdk_version or target_sdk_version),
+        int(target_sdk_version or min_sdk_version) + 1)
 
     # use highest API version in range between min and target API version
     for v in ordered_available_versions:
         if v in preferred_versions:
+            logger.info("Chose API version " + str(v))
             return v
 
     # use next highest API version
     ordered_available_versions.reverse()
     for v in ordered_available_versions:
         if v > int(target_sdk_version):
+            logger.info("Chose API version " + str(v))
             return v
 
-    # TODO: what to do here?
-    return None
+    logger.error("No fitting API version")
+    raise Exception()
 
 
 def _wait_until_boot_completed(emulator_id):
@@ -67,5 +74,9 @@ def _wait_until_boot_completed(emulator_id):
         time.sleep(1)
         slept_seconds += 1
         if slept_seconds == 120:
+            try:
+                DeviceManager.shutdown_emulator()
+            except Exception:
+                pass
             raise SoftTimeLimitExceeded()
         logger.debug(cmd)

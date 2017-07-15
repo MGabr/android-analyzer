@@ -72,6 +72,11 @@
                value="{{ sc.num_activities_limit if sc.num_activities_limit != None }}"
                {% if sc.is_default %}disabled{% endif %}>
 
+        <label for="only_exported_activities">Only analyse exported activities</label>
+        <input type="text" class="form-control" id="only_exported_activities" name="only_exported_activities"
+               {% if sc.only_exported_activities %}checked{% endif %}
+               {% if sc.only_exported_activities %}disabled{% endif %}>
+
         <label for="report_http">Report HTTP traffic</label>
         <input type="checkbox" class="form-control" id="report_http" name="report_http" style="width: 33px"
                {% if sc.report_http %}checked{% endif %}
