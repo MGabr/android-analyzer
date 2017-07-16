@@ -30,7 +30,7 @@ class FieldRequiredError:
         self.fieldname = fieldname
 
     def json_dict(self):
-        return {'fieldname': self.fieldname}
+        return {'field_required_error': {'fieldname': self.fieldname}}
 
 
 def check_form(form, required_fields):

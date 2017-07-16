@@ -28,3 +28,7 @@
 .popover-title-success {
     background: #dff0d8;
 }
+
+#error {
+    display: none;
+}

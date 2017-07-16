@@ -12,9 +12,6 @@ def edit(id, form):
 
     certificate = Certificate.query.get(id)
 
-    if certificate.name != form['name']:
-        _check_name_exists(form)
-
     if certificate:
         certificate.name = form['name']
         certificate.description=form.get('description')
@@ -29,7 +26,6 @@ def edit(id, form):
 
 def add(form):
     check_form(form, required_fields)
-    _check_name_exists(form)
 
     certificate = Certificate(
         user=current_user,
@@ -44,11 +40,6 @@ def add(form):
     db.session.commit()
 
     return certificate
-
-
-def _check_name_exists(form):
-    if Certificate.query.filter(Certificate.name == form['name']).first():
-        raise FieldExistsError('Certificate', 'name')
 
 
 def delete(id):

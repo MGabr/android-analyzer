@@ -2,6 +2,8 @@ $(document).ready(function(){
 
     // for general ajax buttons
     function ajaxButtonClick(e) {
+        hideOldErrors();
+
         e.preventDefault();
         e.defaultPrevented = true;
         formName = $(this).attr('ajax-form');
@@ -15,7 +17,7 @@ $(document).ready(function(){
                 }
             },
             error: function(data) {
-                // TODO: handle error
+                handleErrors(data);
             }
         });
     }
@@ -25,6 +27,8 @@ $(document).ready(function(){
     // set up socket.io connection for receiving analysis results asynchronously
     // on successful setup, the APK is uploaded
     function ajaxUploadForAnalysis(e) {
+        hideOldErrors();
+
         if (!socket) {
             socket = io.connect(null, {
                 'port': location.port,
@@ -61,7 +65,7 @@ $(document).ready(function(){
             },
             error: function (data) {
                 console.log("ajaxUploadForAnalysis error");
-                // TODO: handle error
+                handleErrors(data);
                 socket.disconnect();
                 socket = null;
             }
@@ -115,7 +119,6 @@ $(document).ready(function(){
                 apk_filename = aselect_id.split(scenario_settings_id + '-')[1];
                 apk_filename = apk_filename.substring(0, apk_filename.lastIndexOf('-'));
 
-                console.log("Emitting to socket");
                 socket.emit("activities_analysis", {
                     "scenario_settings_id": scenario_settings_id,
                     "activities": selected_names,
@@ -208,6 +211,39 @@ $(document).ready(function(){
             html: true,
             template: '<div class="popover"><div class="arrow"></div><h3 class="popover-title popover-title-muted"></h3><div class="popover-content"></div></div>'
         });
+    }
+
+    function hideOldErrors() {
+        $('#error').hide();
+    }
+
+    function handleErrors(data) {
+        if (data.responseJSON) {
+            data = data.responseJSON;
+        }
+
+        var error = $('#error');
+        if (error) {
+            if (data.field_exists_error) {
+                error.text("A " + data.field_exists_error.model + " with the same " + data.field_exists_error.field + " already exists");
+            } else if ('login_error' in data) {
+                error.text("Wrong username or password");
+            } else if (data.form_error) {
+                var fields = [];
+                for (var idx in data.form_error.field_errors) {
+                    var field_required_error = data.form_error.field_errors[idx].field_required_error;
+                    if (field_required_error) {
+                        fields.push(field_required_error.fieldname);
+                    }
+                }
+                error.text("The following fields are required: " + fields);
+            } else if (data.entity_not_exists_error) {
+                error.text("No " + data.entity_not_exists_error.model + " with the id " + data.entity_not_exists_error.id + " exists");
+            } else {
+                error.text("An error occured");
+            }
+            error.show();
+        }
     }
 
     $('#add-btn').click(ajaxButtonClick);
