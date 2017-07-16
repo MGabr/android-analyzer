@@ -56,24 +56,23 @@ def static_analysis_task(apk_name, username):
         socketio.emit('html', {'html': html}, room=username)
 
         scenario_datas = scenario_service.get_all_of_user(static_analysis_results, current_user)
-        html = templates_service.render_scenario_datas(scenario_datas)
-        socketio.emit('html', {'html': html}, room=username)
-
-        logger.info('Sent html to socket. Now generating smart input for app.')
-        smart_input_results = apk_analysis.get_smart_input()
-
-        logger.info('Generated smart input for app.')
-
-        if scenario_service.has_activities_to_select(static_analysis_results, current_user):
-            logger.info("Saving static analysis and smart input results for activity selection later.")
-            Session.add(static_analysis_results)
-            smart_input_results_json = {clazz: [tf.__json__() for tf in tfs]
-                                        for clazz, tfs in smart_input_results.iteritems()}
-            smart_input_results_db = SmartInputResult(apk_filename=apk_name, result=smart_input_results_json)
-            Session.add(smart_input_results_db)
-            Session.commit()
-
         if scenario_datas:
+            html = templates_service.render_scenario_datas(scenario_datas)
+            socketio.emit('html', {'html': html}, room=username)
+
+            logger.info('Sent html to socket. Now generating smart input for app.')
+            smart_input_results = apk_analysis.get_smart_input()
+            logger.info('Generated smart input for app.')
+
+            if scenario_service.has_activities_to_select(static_analysis_results, current_user):
+                logger.info("Saving static analysis and smart input results for activity selection later.")
+                Session.add(static_analysis_results)
+                smart_input_results_json = {clazz: [tf.__json__() for tf in tfs]
+                                            for clazz, tfs in smart_input_results.iteritems()}
+                smart_input_results_db = SmartInputResult(apk_filename=apk_name, result=smart_input_results_json)
+                Session.add(smart_input_results_db)
+                Session.commit()
+
             logger.info('Starting dynamic analysis tasks.')
             for scenario_data in scenario_datas:
                 celery.send_task('dynamic_analysis_task', args=[
