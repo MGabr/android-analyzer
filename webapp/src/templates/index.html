@@ -8,25 +8,17 @@
             <h1><strong>SSL Security Analyzer</strong><br>for Android applications</h1>
             <p>Analyze your Android application for common SSL Security bugs which might make them vulnerable for man-in-the-middle attacks.</p>
 
-            <form id="analysis-form" enctype="multipart/form-data">
-                <label class="btn btn-lg btn-success btn-file" role="btn">
-                    Upload and analyze APK file (x86)
-                    <input id="analysis-btn" type="file" name="apks" style="display: none;" multiple
-                           ajax-form="analysis-form" ajax-method="POST" ajax-url="{{ url_for('start_analysis') }}">
-                </label>
-            </form>
-        </div>
-
-        <div>
-            {% with messages = get_flashed_messages() %}
-            {% if messages %}
-            <div class="flashes">
-                {% for message in messages %}
-                    <div class="alert alert-danger" role="alert">{{ message }}</div>
-                {% endfor %}
-            </div>
+            {% if current_user.is_authenticated %}
+                <form id="analysis-form" enctype="multipart/form-data">
+                    <label class="btn btn-lg btn-success btn-file" role="btn">
+                        Upload and analyze APK file (x86)
+                        <input id="analysis-btn" type="file" name="apks" style="display: none;" multiple
+                               ajax-form="analysis-form" ajax-method="POST" ajax-url="{{ url_for('start_analysis') }}">
+                    </label>
+                </form>
+            {% else %}
+                <a class="btn btn-lg btn-success btn-file" href="{{ url_for('show_login') }}">Login or register to analyze APK files</a>
             {% endif %}
-            {% endwith %}
         </div>
     </div>
 </body>
