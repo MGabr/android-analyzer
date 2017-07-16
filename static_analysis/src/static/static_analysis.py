@@ -287,3 +287,20 @@ class StaticAnalyzer:
         results |= addtl_results
 
         return StaticAnalysisResults(apk_filename, package, min_sdk_version, target_sdk_version, list(results))
+
+
+def requires_internet_permission(apk_path):
+    xml = "%s/AndroidManifest.xml" % apk_path
+    tree = ElementTree.parse(xml)
+
+    # get package name from root
+    root = tree.getroot()
+    package = root.attrib["package"]
+
+    for child in tree.iter():
+        for attrib_name,attrib_value in child.attrib.iteritems():
+            if "{http://schemas.android.com/apk/res/android}name" in attrib_name:
+                if attrib_value == 'android.permission.INTERNET':
+                    return package, True
+
+    return package, False

@@ -119,6 +119,10 @@ def vulntype_tooltip_for_result(srv):
             The app has a custom implementation of the {clazz} class.<br />
             Such implementations are often vulnerable to MITM attacks.
             '''.format(clazz=vulntype)
+    elif not srv.requires_internet():
+        return '''
+        The app does not request the INTERNET permission and is therefore not further analysed.
+        '''
     else:
         vulntype = _vulntype_for_result(srv)
         if vulntype in [VulnType.https.value, VulnType.http.value, VulnType.https_http]:

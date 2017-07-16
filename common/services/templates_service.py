@@ -16,12 +16,18 @@ class ScenarioSettingsResultView:
                  apk_filename,
                  scenario_result_views=None,
                  _static_analysis_running=False,
-                 _number_of_result_views=None):
+                 _number_of_result_views=None,
+                 _internet_perm=True):
         self.apk_filename = apk_filename
         self.scenario_settings = scenario_settings
         self.scenario_result_views = scenario_result_views or []
         self._static_analysis_running = _static_analysis_running
         self._number_of_result_views = _number_of_result_views
+        self._internet_perm = _internet_perm
+
+
+    def requires_internet(self):
+        return self._internet_perm
 
     def is_vulnerable(self):
         for r in self.scenario_result_views:
@@ -126,7 +132,7 @@ def render_all_scenario_settings(filenames, current_user):
     return full_html
 
 
-def render_static_analysis_results(static_analysis_results, current_user):
+def render_static_analysis_results(static_analysis_results, current_user, internet_perm=True):
     srvs = list()
     scenarios = scenario_settings_service.get_all_enabled_of_user(current_user)
     for s in scenarios:
@@ -139,7 +145,10 @@ def render_static_analysis_results(static_analysis_results, current_user):
                                   _dynamic_analysis_running=r.vuln_type != VulnType.selected_activities.value)
                for r in single_result_for_s]
 
-        srvs += [ScenarioSettingsResultView(s, static_analysis_results.apk_filename, scenario_result_views=rvs)]
+        srvs += [ScenarioSettingsResultView(s,
+                                            static_analysis_results.apk_filename,
+                                            scenario_result_views=rvs,
+                                            _internet_perm=internet_perm)]
 
     return _html_dict(srvs, only_first_as_resultrow=True)
 

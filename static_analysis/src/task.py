@@ -15,7 +15,7 @@ from src.db_base import SQLAlchemyTask, Session
 from src.definitions import INPUT_APK_DIR
 from src.static.apk_analysis import ApkAnalysis
 from src.static.apk_disassembly import disassemble_apk
-from src.static.static_analysis import StaticAnalyzer, StaticAnalysisResults
+from src.static.static_analysis import StaticAnalyzer, StaticAnalysisResults, requires_internet_permission
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -42,46 +42,58 @@ def static_analysis_task(apk_name, username):
         disassembled_path = disassemble_apk(apk_name)
 
         logger.info('Disassembled APK. Now statically analysing app.')
-        static_analysis_results = StaticAnalyzer().analyze_statically(disassembled_path, apk_name)
-        apk_analysis = ApkAnalysis(apk_name)
-        activities = apk_analysis.get_all_activities_results()
+        package, internet_perm = requires_internet_permission(disassembled_path)
+        if internet_perm:
+            static_analysis_results = StaticAnalyzer().analyze_statically(disassembled_path, apk_name)
+            apk_analysis = ApkAnalysis(apk_name)
+            activities = apk_analysis.get_all_activities_results()
 
-        static_analysis_results = as_combined_static_analysis_results(
-            static_analysis_results,
-            static_analysis_results.result_list + activities)
+            static_analysis_results = as_combined_static_analysis_results(
+                static_analysis_results,
+                static_analysis_results.result_list + activities)
+        else:
+            static_analysis_results = StaticAnalysisResults(apk_name, package, None, None, [])
 
         logger.info('Analysed app statically, now getting scenarios for dynamic analysis and sending html.')
         current_user = Session.query(User).filter(User.username == username).one()
-        html = templates_service.render_static_analysis_results(static_analysis_results, current_user)
+        html = templates_service.render_static_analysis_results(
+            static_analysis_results,
+            current_user,
+            internet_perm=internet_perm)
         socketio.emit('html', {'html': html}, room=username)
 
+        if not internet_perm:
+            logger.info("App does not request internet permission. No further static dynamic analysis")
+            return
+
         scenario_datas = scenario_service.get_all_of_user(static_analysis_results, current_user)
-        if scenario_datas:
-            html = templates_service.render_scenario_datas(scenario_datas)
-            socketio.emit('html', {'html': html}, room=username)
-
-            logger.info('Sent html to socket. Now generating smart input for app.')
-            smart_input_results = apk_analysis.get_smart_input()
-            logger.info('Generated smart input for app.')
-
-            if scenario_service.has_activities_to_select(static_analysis_results, current_user):
-                logger.info("Saving static analysis and smart input results for activity selection later.")
-                Session.add(static_analysis_results)
-                smart_input_results_json = {clazz: [tf.__json__() for tf in tfs]
-                                            for clazz, tfs in smart_input_results.iteritems()}
-                smart_input_results_db = SmartInputResult(apk_filename=apk_name, result=smart_input_results_json)
-                Session.add(smart_input_results_db)
-                Session.commit()
-
-            logger.info('Starting dynamic analysis tasks.')
-            for scenario_data in scenario_datas:
-                celery.send_task('dynamic_analysis_task', args=[
-                    static_analysis_results.apk_filename,
-                    scenario_data,
-                    smart_input_results,
-                    username])
-        else:
+        if not scenario_datas:
             logger.info('No scenarios for dynamic analysis.')
+            return
+
+        html = templates_service.render_scenario_datas(scenario_datas)
+        socketio.emit('html', {'html': html}, room=username)
+
+        logger.info('Sent html to socket. Now generating smart input for app.')
+        smart_input_results = apk_analysis.get_smart_input()
+        logger.info('Generated smart input for app.')
+
+        if scenario_service.has_activities_to_select(static_analysis_results, current_user):
+            logger.info("Saving static analysis and smart input results for activity selection later.")
+            Session.add(static_analysis_results)
+            smart_input_results_json = {clazz: [tf.__json__() for tf in tfs]
+                                        for clazz, tfs in smart_input_results.iteritems()}
+            smart_input_results_db = SmartInputResult(apk_filename=apk_name, result=smart_input_results_json)
+            Session.add(smart_input_results_db)
+            Session.commit()
+
+        logger.info('Starting dynamic analysis tasks.')
+        for scenario_data in scenario_datas:
+            celery.send_task('dynamic_analysis_task', args=[
+                static_analysis_results.apk_filename,
+                scenario_data,
+                smart_input_results,
+                username])
 
     except Exception as e:
         logger.exception("Static analysis crashed")
