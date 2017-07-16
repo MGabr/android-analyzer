@@ -15,7 +15,7 @@ def edit(id, form):
     if certificate.name != form['name']:
         _check_name_exists(form)
 
-    if certificate and not certificate.is_default:
+    if certificate:
         certificate.name = form['name']
         certificate.description=form.get('description')
         certificate.custom_cert_domain=form.get('custom_cert_domain')

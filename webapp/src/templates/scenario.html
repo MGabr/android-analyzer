@@ -10,8 +10,7 @@
 
     <form id="form">
         <label for="name">Name</label>
-        <input type="text" class="form-control" id="name" name="name" value="{{ sc.name if sc.name != None }}"
-               {% if sc.is_default %}disabled{% endif %}>
+        <input type="text" class="form-control" id="name" name="name" value="{{ sc.name if sc.name != None }}">
 
         <label for="is_default">Is default scenario</label>
         <input type="checkbox" class="form-control" id="is_default" name="is_default" style="width: 33px" disabled
@@ -22,7 +21,7 @@
                {% if sc.enabled %}checked{% endif %}>
 
         <label for="vuln_type">Vulnerability type</label>
-        <select class="form-control" id="vuln_type"  name="vuln_type" {% if sc.is_default %}disabled{% endif %}>
+        <select class="form-control" id="vuln_type"  name="vuln_type">
             <option></option>
             {% for vuln_type in vuln_types %}
                 <option value="{{ vuln_type.value }}" {% if vuln_type == sc.vuln_type %}selected{% endif %}>
@@ -32,7 +31,7 @@
         </select>
 
         <label for="mitm_certificate">MITM Certificate</label>
-        <select class="form-control" id="mitm_certificate" name="mitm_certificate" {% if sc.is_default %}disabled{% endif %}>
+        <select class="form-control" id="mitm_certificate" name="mitm_certificate">
             <option></option>
             {% for cert in certs %}
                 <option value="{{ cert.id }}" {% if cert.id == sc.mitm_certificate.id %}selected{% endif %}>
@@ -42,8 +41,7 @@
         </select>
 
         <label for="sys_certificates">System trusted certificates</label>
-        <select multiple class="form-control" id="sys_certificates" name="sys_certificates"
-                {% if sc.is_default %}disabled{% endif %}>
+        <select multiple class="form-control" id="sys_certificates" name="sys_certificates">
             <option disabled></option>
             {% for cert in sys_certs %}
                 <option value="{{ cert.id }}" {% if cert.id in sc.get_sys_certificates_ids() %}selected{% endif %}>
@@ -64,33 +62,27 @@
         </select> -->
 
         <label for="info_message">Info message</label>
-        <textarea class="form-control" id="info_message" name="info_message" rows="3"
-                  {% if sc.is_default %}disabled{% endif %}>{{ sc.info_message }}</textarea>
+        <textarea class="form-control" id="info_message" name="info_message" rows="3">{{ sc.info_message }}</textarea>
 
         <label for="num_activities_limit">Number of activities to analyse limit</label>
         <input type="text" class="form-control" id="num_activities_limit" name="num_activities_limit"
-               value="{{ sc.num_activities_limit if sc.num_activities_limit != None }}"
-               {% if sc.is_default %}disabled{% endif %}>
+               value="{{ sc.num_activities_limit if sc.num_activities_limit != None }}">
 
         <label for="only_exported_activities">Only analyse exported activities</label>
         <input type="text" class="form-control" id="only_exported_activities" name="only_exported_activities"
-               {% if sc.only_exported_activities %}checked{% endif %}
-               {% if sc.only_exported_activities %}disabled{% endif %}>
+               {% if sc.only_exported_activities %}checked{% endif %}>
 
         <label for="report_http">Report HTTP traffic</label>
         <input type="checkbox" class="form-control" id="report_http" name="report_http" style="width: 33px"
-               {% if sc.report_http %}checked{% endif %}
-               {% if sc.is_default %}disabled{% endif %}>
+               {% if sc.report_http %}checked{% endif %}>
 
         <label for="strace">Limit reported intercepted HTTP/S traffic to app traffic (via strace)</label>
         <input type="checkbox" class="form-control" id="strace" name="strace" style="width: 33px"
-               {% if sc.strace %}checked{% endif %}
-               {% if sc.is_default %}disabled{% endif %}>
+               {% if sc.strace %}checked{% endif %}>
 
         <label for="add_upstream_certs">Add upstream certs (to analyse getPeerCertificates pinning bug)</label>
         <input type="checkbox" class="form-control" id="add_upstream_certs" style="width: 33px"
-                {% if sc.add_upstream_certs %}checked{% endif %}
-                {% if sc.is_default %}disabled{% endif %}>
+                {% if sc.add_upstream_certs %}checked{% endif %}>
     </form>
 
     {% if new %}

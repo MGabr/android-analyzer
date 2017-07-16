@@ -11,15 +11,13 @@ required_fields = ['name', 'vuln_type', 'mitm_certificate']
 
 def edit(id, form):
     scenario = ScenarioSettings.query.get(id)
-    scenario.enabled = 'enabled' in form
 
-    if not scenario.is_default:
+    if scenario:
         check_form(form, required_fields)
-        if scenario.name != form['name']:
-            _check_name_exists(form)
 
         mitm_certificate, sys_certificates, user_certificates = _get_scenario_certificates(form)
 
+        scenario.enabled = 'enabled' in form
         scenario.num_activities_limit = form.get('num_activities_limit')
         scenario.name = form['name']
         scenario.vuln_type = VulnType(form['vuln_type'])
@@ -39,7 +37,6 @@ def edit(id, form):
 
 def add(form):
     check_form(form, required_fields)
-    _check_name_exists(form)
 
     mitm_certificate, sys_certificates, user_certificates = _get_scenario_certificates(form)
 
@@ -64,11 +61,6 @@ def add(form):
     db.session.commit()
 
     return scenario
-
-
-def _check_name_exists(form):
-    if ScenarioSettings.query.filter(ScenarioSettings.name == form['name']).first():
-        raise FieldExistsError('ScenarioSettings', 'name')
 
 
 def delete(id):

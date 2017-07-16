@@ -10,42 +10,39 @@
 
     <form id="form">
         <label for="name">Name</label>
-        <input type="text" class="form-control" id="name" name="name" value="{{ c.name if c.name != None }}"
-               {% if c.is_default %}disabled{% endif %}>
+        <input type="text" class="form-control" id="name" name="name" value="{{ c.name if c.name != None }}">
 
         <label for="default">Is default certificate setting</label>
         <input type="checkbox" class="form-control" id="default" style="width: 33px" disabled
                {% if c.is_default %}checked{% endif %}>
 
         <label for="description">Description</label>
-        <textarea class="form-control" id="description" name="description" rows="3"
-                  {% if c.is_default %}disabled{% endif %}>{{ c.description if c.description != None }}</textarea>
+        <textarea class="form-control" id="description" name="description" rows="3">{{ c.description if c.description != None }}</textarea>
 
         <label for="custom_cert">Custom certificate</label>
         <textarea class="form-control" id="custom_cert" name="custom_cert" rows="5"
-                  placeholder="Enter an optional custom certificate to be used"
-                  {% if c.is_default %}disabled{% endif %}>{{ c.custom_cert_content() if c.custom_cert != None }}</textarea>
+                  placeholder="Enter an optional custom certificate to be used">{{ c.custom_cert_content() if c.custom_cert != None }}</textarea>
 
         <label for="custom_cert_domain">Custom certificate domain</label>
         <input type="text" class="form-control" id="custom_cert_domain" name="custom_cert_domain"
                placeholder="Enter a domain for which the custom certificate should be used"
-               value="{{ c.custom_cert_domain if c.custom_cert_domain != None }}"
-               {% if c.is_default %}disabled{% endif %}>
+               value="{{ c.custom_cert_domain if c.custom_cert_domain != None }}">
 
         <label for="custom_ca">Custom certificate authority</label>
         <textarea class="form-control" id="custom_ca" name="custom_ca" rows="5"
-                  placeholder="Enter an optional custom certificate authority to be used"
-                  {% if c.is_default %}disabled{% endif %}>{{ c.custom_ca_content() if c.custom_ca != None }}</textarea>
+                  placeholder="Enter an optional custom certificate authority to be used">{{ c.custom_ca_content() if c.custom_ca != None }}</textarea>
     </form>
 
     {% if new %}
         <button id="add-btn" class="btn btn-primary"
                 ajax-form="form" ajax-url="{{ url_for('add_certificate') }}" ajax-method="POST">Add</button>
-    {% elif not c.is_default %}
+    {% else %}
         <button id="edit-btn" class="btn btn-primary"
                 ajax-form="form" ajax-url="{{ url_for('edit_certificate', id=c.id) }}" ajax-method="PUT">Edit</button>
-        <button id="delete-btn" class="btn btn-danger"
-               ajax-url="{{ url_for('delete_certificate', id=c.id) }}" ajax-method="DELETE">Delete</button>
+        {% if not c.is_default %}
+            <button id="delete-btn" class="btn btn-danger"
+                ajax-url="{{ url_for('delete_certificate', id=c.id) }}" ajax-method="DELETE">Delete</button>
+        {% endif %}
     {% endif %}
 </div>
 
