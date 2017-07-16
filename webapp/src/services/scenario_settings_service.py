@@ -4,7 +4,7 @@ from common.models.certificate import Certificate
 from common.models.scenario_settings import ScenarioSettings
 from common.models.vuln_type import VulnType
 from src.app import db
-from src.services.errors import check_form, EntityNotExistsError, FieldExistsError
+from src.services.errors import check_form, EntityNotExistsError
 
 required_fields = ['name', 'vuln_type', 'mitm_certificate']
 

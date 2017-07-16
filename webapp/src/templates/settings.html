@@ -59,6 +59,10 @@
         </tbody>
     </table>
     <a class="btn btn-primary" href="{{ url_for('show_certificate', id='new') }}">Add Certificate</a>
+
+    <br />
+    <br />
+    <button id="reset-btn" class="btn btn-danger" ajax-url="{{ url_for('reset_settings') }}" ajax-method="PUT">Reset to default settings</button>
 </div>
 
 </body>

@@ -216,6 +216,7 @@ $(document).ready(function(){
     $('#login-btn').click(ajaxButtonClick);
     $('#register-btn').click(ajaxButtonClick);
     $('#logout-btn').click(ajaxButtonClick);
+    $('#reset-btn').click(ajaxButtonClick);
 
     $('#analysis-btn').change(ajaxUploadForAnalysis);
 

@@ -11,7 +11,7 @@ from common.models.scenario_settings import ScenarioSettings
 from common.models.vuln_type import VulnType
 from services import scenario_settings_service
 from src.app import app, login_manager, socketio
-from src.create_db import create_db
+from src.create_db import create_db, reset_default_settings
 from src.definitions import INPUT_APK_DIR
 from src.services import analysis_service
 from src.services import certificate_service
@@ -184,6 +184,13 @@ def add_certificate():
 def delete_certificate(id):
     certificate_service.delete(id)
     return _json_redirect(url_for('show_settings', deleted_certificate=id))
+
+
+@app.route('/settings', methods=['PUT'])
+@login_required
+def reset_settings():
+    reset_default_settings(current_user)
+    return _json_redirect(url_for('show_settings'))
 
 
 def _json_redirect(url):

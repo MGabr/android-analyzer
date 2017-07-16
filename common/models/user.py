@@ -23,6 +23,9 @@ class User(Base):
     def get_id(self):
         return self.username
 
+    def __eq__(self, other):
+        self.username == other.username
+
     def __json__(self):
         return {
             'username': self.username,

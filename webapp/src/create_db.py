@@ -33,6 +33,18 @@ def drop_db():
     db.drop_all()
 
 
+def reset_default_settings(user):
+    for s in user.scenarios:
+        s.sys_certificates = []
+        db.session.add(s)
+    db.session.flush()
+    ScenarioSettings.query.filter_by(user=user).delete()
+
+    Certificate.query.filter_by(user=user).delete()
+
+    add_default_settings(user)
+
+
 def add_default_settings(user):
     mitmproxy_ca_signed = Certificate(
         user=user,
