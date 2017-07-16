@@ -47,6 +47,7 @@ services:
       - QT_XKB_CONFIG_ROOT=/usr/share/X11/xkb
       - API_VERSIONS=19,25
       # make sure that API_VERSIONS fit the ones specified in build args
+    privileged: true
 
   static_analysis:
     image: mgabr/static_analysis

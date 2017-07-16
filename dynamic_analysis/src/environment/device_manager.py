@@ -17,10 +17,9 @@ class DeviceManager:
     def get_emulator(cls, min_sdk_version, target_sdk_version):
         api = _get_fitting_sdk_version(min_sdk_version, target_sdk_version)
 
-        # TODO: maybe use -gpu on
         no_audio = "export QEMU_AUDIO_DRV=none && "
         emulator_type = str(api)
-        other_opts = "-wipe-data -use-system-libs -writable-system -no-boot-anim -http-proxy http://0.0.0.0:8080"
+        other_opts = "-wipe-data -use-system-libs -writable-system -no-boot-anim -http-proxy http://0.0.0.0:8080 -gpu host"
 
         cmd = no_audio + "emulator -avd " + emulator_type + " -port " + cls.port + " " + other_opts + "  &"
         logger.debug(cmd)
