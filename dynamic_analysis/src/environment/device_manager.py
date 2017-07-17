@@ -19,7 +19,9 @@ class DeviceManager:
 
         no_audio = "export QEMU_AUDIO_DRV=none && "
         emulator_type = str(api)
-        other_opts = "-wipe-data -use-system-libs -writable-system -no-boot-anim -http-proxy http://0.0.0.0:8080 -gpu host"
+        other_opts = "-wipe-data -use-system-libs -writable-system -no-boot-anim -http-proxy http://0.0.0.0:8080 -gpu host "
+        if os.environ['SHOW_EMULATOR_UI'] != "true":
+            other_opts += " -no-window"
 
         cmd = no_audio + "emulator -avd " + emulator_type + " -port " + cls.port + " " + other_opts + "  &"
         logger.debug(cmd)
