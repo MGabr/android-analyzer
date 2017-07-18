@@ -1,0 +1,35 @@
+version: '3'
+services:
+  dynamic_analysis:
+    image: mgabr/dynamic_analysis
+    build:
+      context: .
+      dockerfile: Dockerfile_dynamic_analysis
+      args:
+        - API_VERSIONS=19,22,25
+        # Set the API versions that should be supported
+        # more versions may enable more specific analysis, but will significantly increase docker build time
+        # make sure that API_VERSIONS in environment parameter are the same
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    devices:
+      - /dev/kvm
+    cap_add:
+      - NET_ADMIN
+    tty: true
+    environment:
+      - DISPLAY=$DISPLAY
+      - XAUTHORITY=$XAUTHORITY
+      - QT_XKB_CONFIG_ROOT=/usr/share/X11/xkb
+      - API_VERSIONS=19,25
+      # make sure that API_VERSIONS fit the ones specified in build args
+      - SHOW_EMULATOR_UI=false
+    privileged: true
+    network_mode: "host"
+
+  static_analysis:
+    image: mgabr/static_analysis
+    build:
+      context: .
+      dockerfile: Dockerfile_static_analysis
+    network_mode: "host"
