@@ -1,0 +1,34 @@
+version: '3'
+services:
+  rabbit:
+    hostname: rabbit
+    image: rabbitmq:management
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=mypass
+    ports:
+      - "5672"
+      - "15672"
+    network_mode: "host"
+
+  mysql:
+    hostname: mysql
+    image: mysql:latest
+    environment:
+      - MYSQL_ROOT_PASSWORD=mypass
+      - MYSQL_DATABASE=android-analyzer
+    ports:
+      - "3306"
+    network_mode: "host"
+
+  webapp:
+    image: mgabr/webapp
+    build:
+      context: .
+      dockerfile: Dockerfile_webapp
+    depends_on:
+      - rabbit
+      - mysql
+    ports:
+      - "5000:5000"
+    network_mode: "host"

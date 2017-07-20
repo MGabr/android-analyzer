@@ -3,7 +3,7 @@ import re
 import subprocess32 as subprocess
 import time
 
-from celery.exceptions import SoftTimeLimitExceeded
+from celery.exceptions import SoftTimeLimitExceeded, WorkerTerminate
 from com.dtmilano.android.viewclient import ViewClient
 
 from common.dto.dynamic_analysis import DynamicAnalysisResult, LogAnalysisResult
@@ -61,6 +61,8 @@ def analyze_dynamically(apk_name, scenarios, smart_input_results, smart_input_as
         logger.exception("Timed out")
         failed_results = [LogAnalysisResult(DynamicAnalysisResult(s, timed_out=True)) for s in scenarios.scenario_list]
         timed_out = True
+    except WorkerTerminate as e:
+        raise e
     except Exception:
         logger.exception("Crash during setup")
         failed_results = [LogAnalysisResult(DynamicAnalysisResult(s, crashed_on_setup=True))
@@ -80,7 +82,11 @@ def analyze_dynamically(apk_name, scenarios, smart_input_results, smart_input_as
 
     if failed_results:
         html = templates_service.render_log_analysis_results(failed_results)
-        socketio.emit('html', {'html': html}, room=current_user.username)
+        try:
+            socketio.emit('html', {'html': html}, room=current_user.username)
+        except Exception:
+            logger.exception("Can't send html")
+            raise WorkerTerminate()
 
     return timed_out
 
@@ -104,14 +110,22 @@ def run_scenarios(scenarios, smart_input_results, smart_input_assignment, emulat
         html = templates_service.render_log_analysis_results(
             [log_analysis_result],
             total_log_analysis_results_number=scenario_list_len)
-        socketio.emit('html', {'html': html}, room=current_user.username)
+        try:
+            socketio.emit('html', {'html': html}, room=current_user.username)
+        except Exception:
+            logger.exception("Can't send html")
+            raise WorkerTerminate()
 
         if timed_out:
             remaining_scenarios = scenarios.scenario_list[index+1:]
             failed_results = [LogAnalysisResult(DynamicAnalysisResult(s, timed_out=True)) for s in remaining_scenarios]
             if failed_results:
                 html = templates_service.render_log_analysis_results(failed_results)
-                socketio.emit('html', {'html': html}, room=current_user.username)
+                try:
+                    socketio.emit('html', {'html': html}, room=current_user.username)
+                except Exception:
+                    logger.exception("Can't send html")
+                    raise WorkerTerminate()
 
 
 def run_scenario(scenario, scenarios, log_id, emulator_id, smart_input_results, smart_input_assignment):

@@ -3,6 +3,7 @@ import os
 from urllib import urlretrieve
 
 from celery import Celery
+from celery.exceptions import WorkerTerminate
 from flask_socketio import SocketIO
 
 from common import config
@@ -33,7 +34,8 @@ socketio = SocketIO(message_queue=config.RABBITMQ_URL, async_mode='threading')
     default_retry_delay=10,
     max_retries=1,
     soft_time_limit=600,
-    base=SQLAlchemyTask)
+    base=SQLAlchemyTask,
+    acks_late=True)
 def dynamic_analysis_task(apk_name, scenarios, smart_input_results, username):
     try:
         logger.info('Retrieving APK and loading DTO dependencies.')
@@ -55,6 +57,8 @@ def dynamic_analysis_task(apk_name, scenarios, smart_input_results, username):
         if timed_out:
             dynamic_analysis_task.retry()
 
+    except WorkerTerminate as e:
+        raise e
     except Exception:
         logger.exception("Dynamic analysis crashed")
     finally:

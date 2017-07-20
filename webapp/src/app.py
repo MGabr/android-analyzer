@@ -29,6 +29,8 @@ app.config['CELERY_ROUTES'] = {
     'static_analysis_task': {'queue': 'static_queue'},
     'dynamic_analysis_task': {'queue': 'dynamic_queue'}}
 app.config['CELERYD_PREFETCH_MULTIPLIER'] = 1
+app.config['CELERY_ACKS_LATE'] = True
+
 
 
 gevent.monkey.patch_all()

@@ -3,6 +3,7 @@ import os
 from urllib import urlretrieve
 
 from celery import Celery
+from celery.exceptions import WorkerTerminate
 from flask_socketio import SocketIO
 
 from common import config
@@ -25,14 +26,22 @@ logger = logging.getLogger(__name__)
 celery = Celery(broker=config.RABBITMQ_URL)
 celery.conf.update({
     'CELERY_ROUTES': {'dynamic_analysis_task': {'queue': 'dynamic_queue'}},
-    'CELERYD_PREFETCH_MULTIPLIER': 1
+    'CELERYD_PREFETCH_MULTIPLIER': 1,
+    'CELERY_ACKS_LATE': True
 })
 
 
 socketio = SocketIO(message_queue=config.RABBITMQ_URL, async_mode='threading')
 
 
-@celery.task(name='static_analysis_task', base=SQLAlchemyTask)
+@celery.task(
+    name='static_analysis_task',
+    name='dynamic_analysis_task',
+    default_retry_delay=10,
+    max_retries=2,
+    soft_time_limit=600,
+    acks_late=True,
+    base=SQLAlchemyTask, acks_late=True)
 def static_analysis_task(apk_name, username):
     try:
         logger.info("Retrieving APK.")
@@ -60,7 +69,11 @@ def static_analysis_task(apk_name, username):
             static_analysis_results,
             current_user,
             internet_perm=internet_perm)
-        socketio.emit('html', {'html': html}, room=username)
+        try:
+            socketio.emit('html', {'html': html}, room=username)
+        except Exception:
+            logger.exception("Can't send html")
+            raise WorkerTerminate()
 
         if not internet_perm:
             logger.info("App does not request internet permission. No further static dynamic analysis")
@@ -72,7 +85,11 @@ def static_analysis_task(apk_name, username):
             return
 
         html = templates_service.render_scenario_datas(scenario_datas)
-        socketio.emit('html', {'html': html}, room=username)
+        try:
+            socketio.emit('html', {'html': html}, room=username)
+        except Exception:
+            logger.exception("Can't send html")
+            raise WorkerTerminate()
 
         logger.info('Sent html to socket. Now generating smart input for app.')
         smart_input_results = apk_analysis.get_smart_input()
@@ -89,14 +106,21 @@ def static_analysis_task(apk_name, username):
 
         logger.info('Starting dynamic analysis tasks.')
         for scenario_data in scenario_datas:
-            celery.send_task('dynamic_analysis_task', args=[
-                static_analysis_results.apk_filename,
-                scenario_data,
-                smart_input_results,
-                username])
+            try:
+                celery.send_task('dynamic_analysis_task', args=[
+                    static_analysis_results.apk_filename,
+                    scenario_data,
+                    smart_input_results,
+                    username])
+            except Exception:
+                logger.exception("Can't send dynamic analysis tasks")
+                raise WorkerTerminate()
 
+    except WorkerTerminate as e:
+        raise e
     except Exception as e:
         logger.exception("Static analysis crashed")
+        static_analysis_task.retry()
     finally:
         if os.path.isfile(INPUT_APK_DIR + apk_name + ".apk"):
             os.remove(INPUT_APK_DIR + apk_name + ".apk")
