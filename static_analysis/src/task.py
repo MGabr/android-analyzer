@@ -39,8 +39,8 @@ socketio = SocketIO(message_queue=config.RABBITMQ_URL, async_mode='threading')
     default_retry_delay=10,
     max_retries=2,
     soft_time_limit=600,
-    acks_late=True,
-    base=SQLAlchemyTask, acks_late=True)
+    base=SQLAlchemyTask,
+    acks_late=True)
 def static_analysis_task(apk_name, username):
     try:
         logger.info("Retrieving APK.")
