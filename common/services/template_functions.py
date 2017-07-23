@@ -132,7 +132,9 @@ def vulntype_tooltip_for_result(srv):
             return '''
             The app has a custom implementation of the {clazz} class.<br />
             Such implementations are often vulnerable to MITM attacks.
-            '''.format(clazz=vulntype)
+            The names of the vulnerable implementations are:<br>
+            {impls}
+            '''.format(impls=_display_vuln_impls(srv), clazz=vulntype)
     elif not srv.requires_internet():
         return '''
         The app does not request the INTERNET permission and is therefore not further analysed.
@@ -158,6 +160,14 @@ def activityselect_class_for_result(srv):
     if srv.has_activity_to_select():
         return "aselect" + str(srv.scenario_settings.id) + "-" + str(srv.apk_filename)
     return ""
+
+
+def _display_vuln_impls(srv):
+    vuln_impls = set()
+    if srv.is_statically_vulnerable():
+        vuln_impls = {r.static_analysis_result.vuln_entry for r in srv.scenario_result_views
+                      if r.static_analysis_result}
+    return display_br_joined(vuln_impls)
 
 
 def _display_connected_hostnames(r):
