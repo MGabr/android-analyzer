@@ -36,9 +36,6 @@ socketio = SocketIO(message_queue=config.RABBITMQ_URL, async_mode='threading')
 
 @celery.task(
     name='static_analysis_task',
-    default_retry_delay=10,
-    max_retries=2,
-    soft_time_limit=600,
     base=SQLAlchemyTask,
     acks_late=True)
 def static_analysis_task(apk_name, username):
@@ -47,32 +44,40 @@ def static_analysis_task(apk_name, username):
         urlretrieve(config.WEBAPP_URL + '/apk/' + apk_name, INPUT_APK_DIR + apk_name + ".apk")
 
         logger.info('Disassembling APK.')
-        disassembled_path = disassemble_apk(apk_name)
+        crashed_on_disass = False
+        try:
+            disassembled_path = disassemble_apk(apk_name)
+        except:
+            crashed_on_disass = True
+            static_analysis_results = StaticAnalysisResults(apk_name, None, None, None, [])
 
-        logger.info('Disassembled APK. Now statically analysing app.')
-        package, internet_perm = requires_internet_permission(disassembled_path)
-        if internet_perm:
-            static_analysis_results = StaticAnalyzer().analyze_statically(disassembled_path, apk_name)
-            apk_analysis = ApkAnalysis(apk_name)
-            activities = apk_analysis.get_all_activities_results()
+        internet_perm = True
+        if not crashed_on_disass:
+            logger.info('Disassembled APK. Now statically analysing app.')
+            package, internet_perm = requires_internet_permission(disassembled_path)
+            if internet_perm:
+                static_analysis_results = StaticAnalyzer().analyze_statically(disassembled_path, apk_name)
+                apk_analysis = ApkAnalysis(apk_name)
+                activities = apk_analysis.get_all_activities_results()
 
-            static_analysis_results = as_combined_static_analysis_results(
-                static_analysis_results,
-                static_analysis_results.result_list + activities)
-        else:
-            static_analysis_results = StaticAnalysisResults(apk_name, package, None, None, [])
+                static_analysis_results = as_combined_static_analysis_results(
+                    static_analysis_results,
+                    static_analysis_results.result_list + activities)
+            else:
+                static_analysis_results = StaticAnalysisResults(apk_name, package, None, None, [])
 
         logger.info('Analysed app statically, now getting scenarios for dynamic analysis and sending html.')
         current_user = Session.query(User).filter(User.username == username).one()
         html = templates_service.render_static_analysis_results(
             static_analysis_results,
             current_user,
+            crashed_on_disass=crashed_on_disass,
             internet_perm=internet_perm)
-        try:
-            socketio.emit('html', {'html': html}, room=username)
-        except Exception:
-            logger.exception("Can't send html")
-            raise WorkerTerminate()
+        send_html(html, username)
+
+        if crashed_on_disass:
+            logger.error("Static analysis crashed during disassembly of APK. No further analysis")
+            return
 
         if not internet_perm:
             logger.info("App does not request internet permission. No further static dynamic analysis")
@@ -84,11 +89,7 @@ def static_analysis_task(apk_name, username):
             return
 
         html = templates_service.render_scenario_datas(scenario_datas)
-        try:
-            socketio.emit('html', {'html': html}, room=username)
-        except Exception:
-            logger.exception("Can't send html")
-            raise WorkerTerminate()
+        send_html(html, username)
 
         logger.info('Sent html to socket. Now generating smart input for app.')
         smart_input_results = apk_analysis.get_smart_input()
@@ -119,7 +120,12 @@ def static_analysis_task(apk_name, username):
         raise e
     except Exception as e:
         logger.exception("Static analysis crashed")
-        static_analysis_task.retry()
+        if not 'current_user' in locals():
+            current_user = Session.query(User).filter(User.username == username).one()
+        if not 'static_analysis_results' in locals():
+            static_analysis_results = StaticAnalysisResults(apk_name, None, None, None, [])
+        html = templates_service.render_static_analysis_results(static_analysis_results, current_user, crashed=True)
+        send_html(html, username)
     finally:
         if os.path.isfile(INPUT_APK_DIR + apk_name + ".apk"):
             os.remove(INPUT_APK_DIR + apk_name + ".apk")
@@ -132,3 +138,11 @@ def as_combined_static_analysis_results(r, combined_result_list):
         r.min_sdk_version,
         r.target_sdk_version,
         combined_result_list)
+
+
+def send_html(html, username):
+    try:
+        socketio.emit('html', {'html': html}, room=username)
+    except Exception:
+        logger.exception("Can't send html")
+        raise WorkerTerminate()

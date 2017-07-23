@@ -17,13 +17,17 @@ class ScenarioSettingsResultView:
                  scenario_result_views=None,
                  _static_analysis_running=False,
                  _number_of_result_views=None,
-                 _internet_perm=True):
+                 _internet_perm=True,
+                 _crashed_on_disass=False,
+                 _crashed=False):
         self.apk_filename = apk_filename
         self.scenario_settings = scenario_settings
         self.scenario_result_views = scenario_result_views or []
         self._static_analysis_running = _static_analysis_running
         self._number_of_result_views = _number_of_result_views
         self._internet_perm = _internet_perm
+        self._crashed_on_disass = _crashed_on_disass
+        self._crashed = _crashed
 
 
     def requires_internet(self):
@@ -61,6 +65,12 @@ class ScenarioSettingsResultView:
         # to not mess up table formatting, rowspan, we need the real number of scenario_result_views
         # even if they are not included now
         return self._number_of_result_views or len(self.scenario_result_views or [None])
+
+    def crashed_on_disass(self):
+        return self._crashed_on_disass
+
+    def crashed_on_static_analysis(self):
+        return self._crashed
 
 
 class ScenarioResultView:
@@ -132,7 +142,7 @@ def render_all_scenario_settings(filenames, current_user):
     return full_html
 
 
-def render_static_analysis_results(static_analysis_results, current_user, internet_perm=True):
+def render_static_analysis_results(static_analysis_results, current_user, internet_perm=True, crashed_on_disass=False, crashed=False):
     srvs = list()
     scenarios = scenario_settings_service.get_all_enabled_of_user(current_user)
     for s in scenarios:
@@ -148,7 +158,9 @@ def render_static_analysis_results(static_analysis_results, current_user, intern
         srvs += [ScenarioSettingsResultView(s,
                                             static_analysis_results.apk_filename,
                                             scenario_result_views=rvs,
-                                            _internet_perm=internet_perm)]
+                                            _internet_perm=internet_perm,
+                                            _crashed_on_disass=crashed_on_disass,
+                                            _crashed=crashed)]
 
     return _html_dict(srvs, only_first_as_resultrow=True)
 

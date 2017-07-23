@@ -27,7 +27,6 @@ def display_nl_joined(set):
     return "\n".join(set)
 
 
-# TODO: where to use?
 def row_class_for_result(r):
     if r.is_vulnerable():
         return "danger"
@@ -37,11 +36,12 @@ def row_class_for_result(r):
         return "muted"
     else:
         return "success"
-        # TODO: for crashed analysis
 
 
 def glyphicon_for_static_result(srv):
-    if srv.has_activity_to_select() or srv.has_selected_activity():
+    if srv.crashed_on_disass() or srv.crashed_on_static_analysis():
+        return "glyphicon glyphicon-fire text-muted"
+    elif srv.has_activity_to_select() or srv.has_selected_activity():
         return "glyphicon glyphicon-list text-muted"
     elif srv.is_vulnerable() or srv.is_statically_vulnerable():
         vulntype = _vulntype_for_result(srv)
@@ -81,6 +81,10 @@ def vulntype_for_result(srv):
 def vulntype_tooltiptitle_for_result(srv):
     if srv.static_analysis_running():
         return "App is currently analysed"
+    elif srv.crashed_on_disass():
+        return "Static analysis crashed during disassembly of APK"
+    elif srv.crashed_on_static_analysis():
+        return "Static analysis crashed"
     elif srv.has_activity_to_select():
         return "Selected activities of app will be analysed"
     elif srv.has_selected_activity():
@@ -96,6 +100,16 @@ def vulntype_tooltiptitle_for_result(srv):
 def vulntype_tooltip_for_result(srv):
     if srv.static_analysis_running():
         return "The app is currently analysed statically."
+    elif srv.crashed_on_disass():
+        return '''
+            Static analysis has crashed during the disassembly of the APK.<br />
+            Further analysis of the app can not be performed.
+            '''
+    elif srv.crashed_on_static_analysis():
+        return '''
+        Static analysis has crashed.<br />
+        Further analysis of the app can not be performed.
+        '''
     elif srv.has_activity_to_select():
         return '''
             This scenario has no static analysis for custom implementations.<br />
