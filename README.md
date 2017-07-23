@@ -13,7 +13,7 @@ Vulnerabilities include
 
 Run `sudo xhost +` to enable displaying emulator UI.\
 Run `docker-compose -f docker-compose-local.yml up --build`. The initial building of the docker images might take some time (~ 1 hour).\
-You can access the web service on `http://0.0.0.0:5000`
+You can access the web service on `http://0.0.0.0:5000/index`
 
 See docker-compose configuration files for customization options.
 
@@ -24,7 +24,7 @@ Run `docker-compose -f docker-compose-manager.yml up --build` on the manager mac
 Run `sudo xhost +` and `docker-compose -f docker-compose-workers.yml up --build` on each of the worker machines
 (including the manager machine if it should also run workers).\
 Make sure that the ports of the docker-compose configuration files are not already in use (e.g. by a local RabbitMQ server).\
-You can access the web service on the IP of the manager machine on port 5000.
+You can access the web service on the IP of the manager machine on port 5000 at /index.
 
 See docker-compose configuration files for customization options.
 

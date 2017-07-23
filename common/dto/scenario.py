@@ -1,6 +1,7 @@
 from common.dto_dependency_loader import asinstanceof, asinstancesof, DtoDependencyLoader
 from common.models.scenario_settings import ScenarioSettings
 from common.models.static_analysis import StaticAnalysisResult
+from common.models.vuln_type import VulnType
 
 
 class Scenario:
@@ -38,4 +39,8 @@ class ScenariosData:
             'package': self.package,
             'min_sdk_version': self.min_sdk_version,
             'target_sdk_version': self.target_sdk_version}
+
+    def is_selected_activities(self):
+        return bool([s for s in self.scenario_list
+                     if s.static_analysis_result.vuln_type == VulnType.selected_activities.value])
 

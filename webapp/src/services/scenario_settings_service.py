@@ -18,7 +18,7 @@ def edit(id, form):
         mitm_certificate, sys_certificates, user_certificates = _get_scenario_certificates(form)
 
         scenario.enabled = 'enabled' in form
-        scenario.num_activities_limit = form.get('num_activities_limit')
+        scenario.num_activities_limit = form.get('num_activities_limit') or None
         scenario.name = form['name']
         scenario.vuln_type = VulnType(form['vuln_type'])
         scenario.mitm_certificate = mitm_certificate
@@ -41,7 +41,7 @@ def add(form):
     mitm_certificate, sys_certificates, user_certificates = _get_scenario_certificates(form)
 
     scenario = ScenarioSettings(
-        num_activities_limit=form.get('num_activities_limit'),
+        num_activities_limit=form.get('num_activities_limit') or None,
         user=current_user,
         name=form['name'],
         vuln_type=VulnType(form['vuln_type']),

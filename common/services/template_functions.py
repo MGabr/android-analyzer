@@ -165,8 +165,15 @@ def activityselect_class_for_result(srv):
 def _display_vuln_impls(srv):
     vuln_impls = set()
     if srv.is_statically_vulnerable():
-        vuln_impls = {r.static_analysis_result.vuln_entry for r in srv.scenario_result_views
+        vuln_impls = {r.static_analysis_result.vuln_entry
+                      for r in srv.scenario_result_views
                       if r.static_analysis_result}
+        if not vuln_impls:
+            vuln_impls = {r.log_analysis_result.dynamic_analysis_result.scenario.static_analysis_result.vuln_entry
+                          for r in srv.scenario_result_views
+                          if r.log_analysis_result}
+    if not vuln_impls:
+        return ""
     return display_br_joined(vuln_impls)
 
 

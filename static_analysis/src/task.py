@@ -107,11 +107,12 @@ def static_analysis_task(apk_name, username):
         logger.info('Starting dynamic analysis tasks.')
         for scenario_data in scenario_datas:
             try:
-                celery.send_task('dynamic_analysis_task', args=[
-                    static_analysis_results.apk_filename,
-                    scenario_data,
-                    smart_input_results,
-                    username])
+                if not scenario_data.is_selected_activities():
+                    celery.send_task('dynamic_analysis_task', args=[
+                        static_analysis_results.apk_filename,
+                        scenario_data,
+                        smart_input_results,
+                        username])
             except Exception:
                 logger.exception("Can't send dynamic analysis tasks")
                 raise WorkerTerminate()
